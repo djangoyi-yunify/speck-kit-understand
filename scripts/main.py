@@ -4,7 +4,7 @@ from typing import Optional
 
 from scripts.config import Config, update_file_sha, get_files_to_translate, FileConfig
 from scripts.github_api import get_file_sha, download_file, GitHubFile
-from scripts.file_ops import ensure_dir, write_file, read_file, get_source_filename
+from scripts.file_ops import ensure_dir, write_file, read_file
 from scripts.translator import LLMClient, translate_markdown, get_llm_client
 
 
@@ -94,7 +94,8 @@ def translate_files(
             write_file(target_path, translated_content)
             
             if group.include_source:
-                source_path = os.path.join(target_dir, get_source_filename(update.file_config.target))
+                source_filename = os.path.basename(update.file_config.source)
+                source_path = os.path.join(target_dir, source_filename)
                 write_file(source_path, github_file.content)
             
             results[update.file_config.source] = True
