@@ -1,11 +1,32 @@
 import re
+import os
 from typing import Protocol, Optional
 from dataclasses import dataclass
 
 
+_PROMPT_DIR = os.path.join(os.path.dirname(__file__), "prompts")
+
+
+def load_system_prompt(filename: str = "translate_system.txt") -> str:
+    """Load system prompt from file.
+    
+    Args:
+        filename: Name of the prompt file in the prompts directory.
+        
+    Returns:
+        The content of the prompt file.
+        
+    Raises:
+        FileNotFoundError: If the prompt file doesn't exist.
+    """
+    prompt_path = os.path.join(_PROMPT_DIR, filename)
+    with open(prompt_path, "r", encoding="utf-8") as f:
+        return f.read().strip()
+
+
 class LLMClient(Protocol):
     """LLM 客户端协议"""
-    def translate(self, text: str, target_lang: str) -> str:
+    def translate(self, text: str) -> str:
         ...
 
 
@@ -22,8 +43,9 @@ class QingCloudClient:
         self.model = model
         self.api_key = api_key
         self.base_url = base_url or "https://api.qingcloud.com/v1"
+        self._system_prompt = load_system_prompt()
     
-    def translate(self, text: str, target_lang: str = "zh") -> str:
+    def translate(self, text: str) -> str:
         import requests
         url = f"{self.base_url}/chat/completions"
         headers = {
@@ -33,7 +55,7 @@ class QingCloudClient:
         data = {
             "model": self.model,
             "messages": [
-                {"role": "system", "content": f"You are a professional translator. Translate the following text to {target_lang}. Only output the translated text, no explanations."},
+                {"role": "system", "content": self._system_prompt},
                 {"role": "user", "content": text}
             ]
         }
@@ -48,8 +70,9 @@ class OpenAIClient:
         self.model = model
         self.api_key = api_key
         self.base_url = base_url or "https://api.openai.com/v1"
+        self._system_prompt = load_system_prompt()
     
-    def translate(self, text: str, target_lang: str = "zh") -> str:
+    def translate(self, text: str) -> str:
         import requests
         url = f"{self.base_url}/chat/completions"
         headers = {
@@ -59,7 +82,7 @@ class OpenAIClient:
         data = {
             "model": self.model,
             "messages": [
-                {"role": "system", "content": f"You are a professional translator. Translate the following text to {target_lang}."},
+                {"role": "system", "content": self._system_prompt},
                 {"role": "user", "content": text}
             ]
         }
@@ -74,8 +97,9 @@ class AnthropicClient:
         self.model = model
         self.api_key = api_key
         self.base_url = base_url or "https://api.anthropic.com"
+        self._system_prompt = load_system_prompt()
     
-    def translate(self, text: str, target_lang: str = "zh") -> str:
+    def translate(self, text: str) -> str:
         import requests
         url = f"{self.base_url}/v1/messages"
         headers = {
@@ -86,8 +110,9 @@ class AnthropicClient:
         data = {
             "model": self.model,
             "max_tokens": 4096,
+            "system": self._system_prompt,
             "messages": [
-                {"role": "user", "content": f"Translate the following text to {target_lang}:\n\n{text}"}
+                {"role": "user", "content": text}
             ]
         }
         response = requests.post(url, json=data, headers=headers)
@@ -174,29 +199,27 @@ def merge_sections(sections: list[MarkdownSection]) -> str:
     return "".join(result)
 
 
-def translate_text(client: LLMClient, text: str, target_lang: str = "zh") -> str:
+def translate_text(client: LLMClient, text: str) -> str:
     """翻译文本
     
     Args:
         client: LLM 客户端
         text: 待翻译文本
-        target_lang: 目标语言
         
     Returns:
         翻译后的文本
     """
     if not text.strip():
         return text
-    return client.translate(text, target_lang)
+    return client.translate(text)
 
 
-def translate_markdown(client: LLMClient, content: str, target_lang: str = "zh") -> str:
+def translate_markdown(client: LLMClient, content: str) -> str:
     """翻译 Markdown（保留代码块不翻译）
     
     Args:
         client: LLM 客户端
         content: Markdown 内容
-        target_lang: 目标语言
         
     Returns:
         翻译后的 Markdown
@@ -208,7 +231,7 @@ def translate_markdown(client: LLMClient, content: str, target_lang: str = "zh")
         if section.type == "code":
             translated_sections.append(section)
         else:
-            translated_content = translate_text(client, section.content, target_lang)
+            translated_content = translate_text(client, section.content)
             translated_sections.append(MarkdownSection(type="text", content=translated_content))
     
     return merge_sections(translated_sections)

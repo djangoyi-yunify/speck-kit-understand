@@ -85,8 +85,7 @@ def translate_files(
             
             translated_content = translate_markdown(
                 llm_client,
-                github_file.content,
-                target_lang="zh"
+                github_file.content
             )
             
             ensure_dir(target_dir)

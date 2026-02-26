@@ -96,7 +96,7 @@ class TestTranslateMarkdown:
     def test_translate_preserves_code(self):
         """测试代码块不被翻译"""
         mock_client = Mock()
-        mock_client.translate.side_effect = lambda text, lang: "翻译后的文本"
+        mock_client.translate.side_effect = lambda text: "翻译后的文本"
         
         content = "Hello\n```python\ncode\n```\nWorld"
         result = translate_markdown(mock_client, content)
