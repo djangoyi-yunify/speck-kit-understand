@@ -6,6 +6,56 @@
 2. 大功能拆分成多个可测试的函数/过程
 3. 一次实现一个函数或过程
 
+## Git 提交规范
+
+### 提交粒度
+
+采用**小步提交**策略，每个函数完成后提交一次：
+
+```
+写测试 → 实现函数 → 测试通过 → git commit
+```
+
+### 提交时机
+
+| 场景 | 操作 |
+|------|------|
+| 实现完一个函数 | 本地 commit |
+| 每天工作结束 | push 到远程分支 |
+| 完成一个模块 | 创建 PR 进行 review |
+
+### Commit Message 格式
+
+```bash
+git commit -m "feat: implement <function_name> function"
+git commit -m "feat: complete <module_name> module"
+git commit -m "test: add tests for <function_name>"
+git commit -m "refactor: <description>"
+git commit -m "fix: <description>"
+```
+
+### 示例
+
+```bash
+# 按函数提交
+git commit -m "feat: implement load_config function"
+git commit -m "feat: implement save_config function"
+git commit -m "feat: implement update_file_sha function"
+
+# 模块完成后
+git commit -m "feat: complete config module with 4 functions"
+
+# 阶段完成后
+git commit -m "feat: complete phase 1 - basic modules (config, file_ops)"
+```
+
+### 好处
+
+- 提交历史清晰，每个 commit 对应一个功能点
+- 方便回滚和 code review
+- 符合 TDD 的红色 - 绿色 - 重构节奏
+- 避免远程仓库过于碎片化
+
 ## 模块划分
 
 ### 模块 1：配置管理 (`config.py`)
