@@ -14,13 +14,13 @@
       "files": [
         {
           "source": "templates/commands/constitution.md",
-          "target": "constitution-cn.md",
-          "last_sha": "4afbd87abb45744966bbeaaa71d20742cf778c48"
+          "target": "constitution.cn.md",
+          "last_sha": ""
         },
         {
           "source": "templates/constitution-template.md",
-          "target": "constitution-template-cn.md",
-          "last_sha": "4afbd87abb45744966bbeaaa71d20742cf778c48"
+          "target": "constitution-template.cn.md",
+          "last_sha": ""
         }
       ]
     }
