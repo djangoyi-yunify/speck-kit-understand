@@ -1,0 +1,40 @@
+{
+  "source_repo": "github/spec-kit",
+  "source_branch": "main",
+  "llm": {
+    "provider": "qingcloud",
+    "model": "glm-5",
+    "base_url": null
+  },
+  "groups": [
+    {
+      "name": "core",
+      "target_dir": "translated/zh/core",
+      "include_source": true,
+      "files": [
+        {
+          "source": "README.md",
+          "target": "README.md",
+          "last_sha": ""
+        },
+        {
+          "source": "spec-driven.md",
+          "target": "spec-driven.md",
+          "last_sha": ""
+        }
+      ]
+    },
+    {
+      "name": "guides",
+      "target_dir": "translated/zh/docs",
+      "include_source": true,
+      "files": [
+        {
+          "source": "docs/upgrade.md",
+          "target": "upgrade.md",
+          "last_sha": ""
+        }
+      ]
+    }
+  ]
+}
