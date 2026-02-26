@@ -17,7 +17,7 @@ class MarkdownSection:
 
 
 class QingCloudClient:
-    """青云 AI 客户端"""
+    """青云 AI 客户端 (OpenAI 兼容格式)"""
     def __init__(self, model: str, api_key: str, base_url: Optional[str] = None):
         self.model = model
         self.api_key = api_key
@@ -25,19 +25,21 @@ class QingCloudClient:
     
     def translate(self, text: str, target_lang: str = "zh") -> str:
         import requests
-        url = f"{self.base_url}/translate"
+        url = f"{self.base_url}/chat/completions"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
         data = {
             "model": self.model,
-            "text": text,
-            "target_lang": target_lang
+            "messages": [
+                {"role": "system", "content": f"You are a professional translator. Translate the following text to {target_lang}. Only output the translated text, no explanations."},
+                {"role": "user", "content": text}
+            ]
         }
         response = requests.post(url, json=data, headers=headers)
         response.raise_for_status()
-        return response.json().get("translated_text", "")
+        return response.json()["choices"][0]["message"]["content"]
 
 
 class OpenAIClient:
