@@ -58,8 +58,7 @@ jobs:
           if git diff --quiet; then
             echo "No changes to commit"
           else
-            git add translated/
-            git add translation-config.json
+            git add -A
             git commit -m "docs: update translated documentation"
             git push
           fi
