@@ -14,7 +14,6 @@ class FileUpdate:
     group_idx: int
     file_idx: int
     file_config: FileConfig
-    new_sha: str
 
 
 def check_updates(config: Config, github_token: str) -> list[FileUpdate]:
@@ -44,8 +43,7 @@ def check_updates(config: Config, github_token: str) -> list[FileUpdate]:
                 updates.append(FileUpdate(
                     group_idx=group_idx,
                     file_idx=file_idx,
-                    file_config=file_config,
-                    new_sha=current_sha
+                    file_config=file_config
                 ))
         except Exception as e:
             print(f"Error checking {file_config.source}: {e}")
@@ -180,8 +178,7 @@ def run_translate_workflow() -> None:
                 updates.append(FileUpdate(
                     group_idx=group_idx,
                     file_idx=file_idx,
-                    file_config=file_config,
-                    new_sha=""
+                    file_config=file_config
                 ))
     
     if updates:

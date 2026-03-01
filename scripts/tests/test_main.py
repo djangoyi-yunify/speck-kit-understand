@@ -34,7 +34,6 @@ class TestCheckUpdates:
         updates = check_updates(config, "token")
         assert len(updates) == 2
         assert updates[0].file_config.source == "a.md"
-        assert updates[0].new_sha == "new_sha_1"
 
     @patch('scripts.main.get_file_sha')
     @patch('scripts.main.get_sha')
@@ -113,8 +112,7 @@ class TestTranslateFiles:
         updates = [FileUpdate(
             group_idx=0,
             file_idx=0,
-            file_config=FileConfig(source="a.md", target="a.md"),
-            new_sha="new_sha"
+            file_config=FileConfig(source="a.md", target="a.md")
         )]
         
         mock_client = Mock()
@@ -148,8 +146,7 @@ class TestTranslateFiles:
         updates = [FileUpdate(
             group_idx=0,
             file_idx=0,
-            file_config=FileConfig(source="a.md", target="a.md"),
-            new_sha="new_sha"
+            file_config=FileConfig(source="a.md", target="a.md")
         )]
         
         mock_client = Mock()
@@ -184,8 +181,7 @@ class TestTranslateFiles:
         updates = [FileUpdate(
             group_idx=0,
             file_idx=0,
-            file_config=FileConfig(source="README.md", target="README.md"),
-            new_sha="new_sha"
+            file_config=FileConfig(source="README.md", target="README.md")
         )]
         
         mock_client = Mock()
@@ -219,8 +215,7 @@ class TestTranslateFiles:
         updates = [FileUpdate(
             group_idx=0,
             file_idx=0,
-            file_config=FileConfig(source="a.md", target="a.cn.md"),
-            new_sha="new_sha"
+            file_config=FileConfig(source="a.md", target="a.cn.md")
         )]
         
         mock_client = Mock()
@@ -254,8 +249,7 @@ class TestTranslateFiles:
         updates = [FileUpdate(
             group_idx=0,
             file_idx=0,
-            file_config=FileConfig(source="README.md", target="README.md"),
-            new_sha="new_sha"
+            file_config=FileConfig(source="README.md", target="README.md")
         )]
         
         mock_client = Mock()
@@ -313,8 +307,7 @@ class TestRunCheckWorkflow:
         mock_check.return_value = [FileUpdate(
             group_idx=0,
             file_idx=0,
-            file_config=FileConfig(source="a.md", target="a.md"),
-            new_sha="new_sha"
+            file_config=FileConfig(source="a.md", target="a.md")
         )]
         
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
