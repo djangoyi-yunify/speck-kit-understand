@@ -191,6 +191,41 @@ class TestTranslateFiles:
     @patch('scripts.main.translate_markdown')
     @patch('scripts.main.ensure_dir')
     @patch('scripts.main.write_file')
+    def test_translate_files_with_prefix_path(self, mock_write, mock_ensure, mock_translate, mock_download):
+        """测试路径前缀格式"""
+        mock_download.return_value = Mock(sha="abc", content="# Original")
+        mock_translate.return_value = "# 翻译后"
+        
+        config = Config(
+            source_repo="github/spec-kit",
+            source_branch="main",
+            llm=LLMConfig(provider="qingcloud", model="glm-5"),
+            groups=[
+                GroupConfig(
+                    name="test",
+                    target_dir="00-constitution",
+                    include_source=True,
+                    files=[FileConfig(source="a.md", target="a.cn.md")]
+                )
+            ]
+        )
+        
+        updates = [FileUpdate(
+            group_idx=0,
+            file_idx=0,
+            file_config=FileConfig(source="a.md", target="a.cn.md"),
+            new_sha="new_sha"
+        )]
+        
+        mock_client = Mock()
+        translate_files(config, updates, mock_client, "token")
+        
+        mock_ensure.assert_called_with("github-spec-kit-main/00-constitution")
+
+    @patch('scripts.main.download_file')
+    @patch('scripts.main.translate_markdown')
+    @patch('scripts.main.ensure_dir')
+    @patch('scripts.main.write_file')
     def test_translate_files_without_source(self, mock_write, mock_ensure, mock_translate, mock_download):
         """测试不包含原文对照"""
         mock_download.return_value = Mock(sha="abc", content="# Original")

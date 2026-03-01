@@ -71,9 +71,11 @@ def translate_files(
     """
     results = {}
     
+    prefix = f"{config.source_repo}-{config.source_branch}".replace("/", "-")
+    
     for update in updates:
         group = config.groups[update.group_idx]
-        target_dir = group.target_dir
+        target_dir = os.path.join(prefix, group.target_dir)
         
         try:
             github_file = download_file(
