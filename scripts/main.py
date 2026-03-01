@@ -131,7 +131,8 @@ def run_check_workflow() -> None:
             f'{u.group_idx}:{u.file_idx}'
             for u in updates
         ])
-        print(f"::set-output name=files::{files_json}")
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write(f"files={files_json}\n")
     else:
         print("No files need translation")
 
