@@ -125,6 +125,17 @@
           "target": "taskstoissues.cn.md"
         }
       ]
+    },
+    {
+      "name": "09-agent-file",
+      "target_dir": "09-agent-file",
+      "include_source": true,
+      "files": [
+        {
+          "source": "templates/agent-file-template.md",
+          "target": "agent-file-template.cn.md"
+        }
+      ]
     }
   ]
 }
