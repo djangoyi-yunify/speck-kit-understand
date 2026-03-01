@@ -1,5 +1,6 @@
 import pytest
 import os
+import tempfile
 from unittest.mock import Mock, patch, MagicMock
 from scripts.main import FileUpdate, check_updates, translate_files
 from scripts.config import Config, LLMConfig, GroupConfig, FileConfig
@@ -235,9 +236,19 @@ class TestRunCheckWorkflow:
         )
         mock_check.return_value = []
         
-        with patch.dict(os.environ, {'GITHUB_TOKEN': 'test_token'}):
-            from scripts.main import run_check_workflow
-            run_check_workflow()
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
+            output_file = f.name
+        
+        try:
+            with patch.dict(os.environ, {'GITHUB_TOKEN': 'test_token', 'GITHUB_OUTPUT': output_file}):
+                from scripts.main import run_check_workflow
+                run_check_workflow()
+            
+            with open(output_file, 'r') as f:
+                content = f.read()
+            assert 'has_updates=false' in content
+        finally:
+            os.unlink(output_file)
 
     @patch('scripts.config.load_config')
     @patch('scripts.main.check_updates')
@@ -261,9 +272,20 @@ class TestRunCheckWorkflow:
             new_sha="new_sha"
         )]
         
-        with patch.dict(os.environ, {'GITHUB_TOKEN': 'test_token'}):
-            from scripts.main import run_check_workflow
-            run_check_workflow()
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
+            output_file = f.name
+        
+        try:
+            with patch.dict(os.environ, {'GITHUB_TOKEN': 'test_token', 'GITHUB_OUTPUT': output_file}):
+                from scripts.main import run_check_workflow
+                run_check_workflow()
+            
+            with open(output_file, 'r') as f:
+                content = f.read()
+            assert 'has_updates=true' in content
+            assert 'files=0:0' in content
+        finally:
+            os.unlink(output_file)
 
 
 class TestRunTranslateWorkflow:

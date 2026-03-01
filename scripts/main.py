@@ -133,8 +133,11 @@ def run_check_workflow() -> None:
         ])
         with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
             f.write(f"files={files_json}\n")
+            f.write("has_updates=true\n")
     else:
         print("No files need translation")
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write("has_updates=false\n")
 
 
 def run_translate_workflow() -> None:
