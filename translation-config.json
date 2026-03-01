@@ -1,20 +1,25 @@
 {
-  "source_repo": "owner/repo",
+  "source_repo": "github/spec-kit",
   "source_branch": "main",
   "llm": {
     "provider": "qingcloud",
-    "model": "glm-5",
-    "base_url": null
+    "model": "GLM-5",
+    "base_url": "https://openapi.coreshub.cn/v1"
   },
   "groups": [
     {
-      "name": "test",
-      "target_dir": "output",
+      "name": "00-constitution",
+      "target_dir": "00-constitution",
       "include_source": true,
       "files": [
         {
-          "source": "a.md",
-          "target": "a.md",
+          "source": "templates/commands/constitution.md",
+          "target": "constitution.cn.md",
+          "last_sha": ""
+        },
+        {
+          "source": "templates/constitution-template.md",
+          "target": "constitution-template.cn.md",
           "last_sha": ""
         }
       ]
