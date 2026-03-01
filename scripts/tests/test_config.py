@@ -2,7 +2,7 @@ import pytest
 import json
 import tempfile
 from scripts.config import (
-    load_config, save_config, update_file_sha, get_files_to_translate,
+    load_config, save_config, get_files_to_translate,
     Config, LLMConfig, GroupConfig, FileConfig
 )
 
@@ -67,24 +67,6 @@ class TestLoadConfig:
         config = load_config(str(config_file))
         assert config.llm.base_url == "https://proxy.example.com/v1"
 
-    def test_load_config_with_last_sha(self, tmp_path):
-        """测试加载带 last_sha 的配置"""
-        config_file = tmp_path / "config.json"
-        config_file.write_text(json.dumps({
-            "source_repo": "owner/repo",
-            "source_branch": "main",
-            "llm": {"provider": "qingcloud", "model": "glm-5"},
-            "groups": [{
-                "name": "test",
-                "target_dir": "output",
-                "include_source": True,
-                "files": [{"source": "README.md", "target": "README.md", "last_sha": "abc123"}]
-            }]
-        }))
-        
-        config = load_config(str(config_file))
-        assert config.groups[0].files[0].last_sha == "abc123"
-
 
 class TestSaveConfig:
     def test_save_config(self, tmp_path):
@@ -115,7 +97,7 @@ class TestSaveConfig:
                     name="core",
                     target_dir="translated/core",
                     include_source=True,
-                    files=[FileConfig(source="README.md", target="README.md", last_sha="xyz789")]
+                    files=[FileConfig(source="README.md", target="README.md")]
                 )
             ]
         )
@@ -126,7 +108,6 @@ class TestSaveConfig:
         data = json.loads(config_file.read_text())
         assert len(data["groups"]) == 1
         assert data["groups"][0]["name"] == "core"
-        assert data["groups"][0]["files"][0]["last_sha"] == "xyz789"
 
     def test_save_config_with_null_base_url(self, tmp_path):
         """测试保存 base_url 为 null 的配置"""
@@ -142,55 +123,6 @@ class TestSaveConfig:
         
         data = json.loads(config_file.read_text())
         assert data["llm"]["base_url"] is None
-
-
-class TestUpdateFileSha:
-    def test_update_file_sha(self):
-        """测试更新 SHA"""
-        config = Config(
-            source_repo="owner/repo",
-            source_branch="main",
-            llm=LLMConfig(provider="qingcloud", model="glm-5"),
-            groups=[GroupConfig(
-                name="test",
-                target_dir="output",
-                include_source=True,
-                files=[FileConfig(source="README.md", target="README.md", last_sha="old")]
-            )]
-        )
-        
-        new_config = update_file_sha(config, 0, 0, "new_sha")
-        assert new_config.groups[0].files[0].last_sha == "new_sha"
-        assert config.groups[0].files[0].last_sha == "old"  # 原对象不变
-
-    def test_update_invalid_index(self):
-        """测试索引越界"""
-        config = Config(
-            source_repo="owner/repo",
-            source_branch="main",
-            llm=LLMConfig(provider="qingcloud", model="glm-5"),
-            groups=[]
-        )
-        
-        with pytest.raises(IndexError):
-            update_file_sha(config, 0, 0, "new_sha")
-
-    def test_update_invalid_file_index(self):
-        """测试文件索引越界"""
-        config = Config(
-            source_repo="owner/repo",
-            source_branch="main",
-            llm=LLMConfig(provider="qingcloud", model="glm-5"),
-            groups=[GroupConfig(
-                name="test",
-                target_dir="output",
-                include_source=True,
-                files=[FileConfig(source="README.md", target="README.md")]
-            )]
-        )
-        
-        with pytest.raises(IndexError):
-            update_file_sha(config, 0, 1, "new_sha")
 
 
 class TestGetFilesToTranslate:
@@ -210,8 +142,8 @@ class TestGetFilesToTranslate:
         
         files = get_files_to_translate(config)
         assert len(files) == 2
-        assert files[0] == (0, 0, FileConfig(source="a.md", target="a.md", last_sha=""))
-        assert files[1] == (1, 0, FileConfig(source="b.md", target="b.md", last_sha=""))
+        assert files[0] == (0, 0, FileConfig(source="a.md", target="a.md"))
+        assert files[1] == (1, 0, FileConfig(source="b.md", target="b.md"))
 
     def test_get_files_empty_groups(self):
         """测试空分组"""

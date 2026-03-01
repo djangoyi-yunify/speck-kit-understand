@@ -14,7 +14,6 @@ class LLMConfig:
 class FileConfig:
     source: str
     target: str
-    last_sha: str = ""
 
 
 @dataclass
@@ -62,8 +61,7 @@ def load_config(path: str) -> Config:
         files = [
             FileConfig(
                 source=f['source'],
-                target=f['target'],
-                last_sha=f.get('last_sha', '')
+                target=f['target']
             )
             for f in group_data['files']
         ]
@@ -108,8 +106,7 @@ def save_config(config: Config, path: str) -> None:
                 'files': [
                     {
                         'source': f.source,
-                        'target': f.target,
-                        'last_sha': f.last_sha
+                        'target': f.target
                     }
                     for f in group.files
                 ]
@@ -120,27 +117,6 @@ def save_config(config: Config, path: str) -> None:
     
     with open(path, 'w') as f:
         json.dump(data, f, indent=2)
-
-
-def update_file_sha(config: Config, group_idx: int, file_idx: int, sha: str) -> Config:
-    """更新文件的 last_sha
-    
-    Args:
-        config: Config 对象
-        group_idx: 分组索引
-        file_idx: 文件索引
-        sha: 新的 commit SHA
-        
-    Returns:
-        更新后的 Config 对象（新对象，不修改原对象）
-        
-    Raises:
-        IndexError: 索引越界
-    """
-    import copy
-    new_config = copy.deepcopy(config)
-    new_config.groups[group_idx].files[file_idx].last_sha = sha
-    return new_config
 
 
 def get_files_to_translate(config: Config) -> list[tuple[int, int, FileConfig]]:

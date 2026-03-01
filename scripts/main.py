@@ -2,10 +2,11 @@ import os
 from dataclasses import dataclass
 from typing import Optional
 
-from scripts.config import Config, update_file_sha, get_files_to_translate, FileConfig
+from scripts.config import Config, get_files_to_translate, FileConfig
 from scripts.github_api import get_file_sha, download_file, GitHubFile
 from scripts.file_ops import ensure_dir, write_file, read_file
 from scripts.translator import LLMClient, translate_markdown, get_llm_client
+from scripts.sha_tracker import get_sha, save_sha
 
 
 @dataclass
@@ -38,7 +39,8 @@ def check_updates(config: Config, github_token: str) -> list[FileUpdate]:
                 github_token
             )
             
-            if current_sha != file_config.last_sha:
+            last_sha = get_sha(config, file_config.source)
+            if current_sha != last_sha:
                 updates.append(FileUpdate(
                     group_idx=group_idx,
                     file_idx=file_idx,
@@ -156,7 +158,7 @@ def run_translate_workflow() -> None:
     if not llm_api_key:
         raise ValueError("LLM_API_KEY environment variable is required")
     
-    from scripts.config import load_config, update_file_sha, save_config
+    from scripts.config import load_config
     config = load_config(config_path)
     
     llm_client = get_llm_client(
@@ -185,14 +187,8 @@ def run_translate_workflow() -> None:
         
         for update in updates:
             if results.get(update.file_config.source, False):
-                config = update_file_sha(
-                    config,
-                    update.group_idx,
-                    update.file_idx,
-                    update.new_sha
-                )
+                save_sha(config, update.file_config.source, update.new_sha)
         
-        save_config(config, config_path)
         print(f"Translation completed. Results: {results}")
     else:
         print("No files to translate")

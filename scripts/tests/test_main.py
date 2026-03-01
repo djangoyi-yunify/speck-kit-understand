@@ -8,9 +8,11 @@ from scripts.config import Config, LLMConfig, GroupConfig, FileConfig
 
 class TestCheckUpdates:
     @patch('scripts.main.get_file_sha')
-    def test_check_updates_with_changes(self, mock_get_sha):
+    @patch('scripts.main.get_sha')
+    def test_check_updates_with_changes(self, mock_get_last_sha, mock_get_sha):
         """测试有更新"""
         mock_get_sha.side_effect = ["new_sha_1", "new_sha_2"]
+        mock_get_last_sha.side_effect = ["old_sha_1", "old_sha_2"]
         
         config = Config(
             source_repo="owner/repo",
@@ -22,8 +24,8 @@ class TestCheckUpdates:
                     target_dir="output",
                     include_source=True,
                     files=[
-                        FileConfig(source="a.md", target="a.md", last_sha="old_sha_1"),
-                        FileConfig(source="b.md", target="b.md", last_sha="old_sha_2")
+                        FileConfig(source="a.md", target="a.md"),
+                        FileConfig(source="b.md", target="b.md")
                     ]
                 )
             ]
@@ -35,9 +37,11 @@ class TestCheckUpdates:
         assert updates[0].new_sha == "new_sha_1"
 
     @patch('scripts.main.get_file_sha')
-    def test_check_updates_no_changes(self, mock_get_sha):
+    @patch('scripts.main.get_sha')
+    def test_check_updates_no_changes(self, mock_get_last_sha, mock_get_sha):
         """测试无更新"""
         mock_get_sha.side_effect = ["same_sha", "same_sha"]
+        mock_get_last_sha.side_effect = ["same_sha", "same_sha"]
         
         config = Config(
             source_repo="owner/repo",
@@ -49,8 +53,8 @@ class TestCheckUpdates:
                     target_dir="output",
                     include_source=True,
                     files=[
-                        FileConfig(source="a.md", target="a.md", last_sha="same_sha"),
-                        FileConfig(source="b.md", target="b.md", last_sha="same_sha")
+                        FileConfig(source="a.md", target="a.md"),
+                        FileConfig(source="b.md", target="b.md")
                     ]
                 )
             ]
