@@ -70,5 +70,6 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "docs: update translated documentation"
-            git push
+            git pull --rebase origin main
+            git push origin main
           fi
