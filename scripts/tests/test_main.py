@@ -240,7 +240,11 @@ class TestRunCheckWorkflow:
             output_file = f.name
         
         try:
-            with patch.dict(os.environ, {'GITHUB_TOKEN': 'test_token', 'GITHUB_OUTPUT': output_file}):
+            env = {
+                'GITHUB_TOKEN': 'test_token',
+                'GITHUB_OUTPUT': output_file
+            }
+            with patch.dict(os.environ, env):
                 from scripts.main import run_check_workflow
                 run_check_workflow()
             
@@ -276,14 +280,18 @@ class TestRunCheckWorkflow:
             output_file = f.name
         
         try:
-            with patch.dict(os.environ, {'GITHUB_TOKEN': 'test_token', 'GITHUB_OUTPUT': output_file}):
+            env = {
+                'GITHUB_TOKEN': 'test_token',
+                'GITHUB_OUTPUT': output_file
+            }
+            with patch.dict(os.environ, env):
                 from scripts.main import run_check_workflow
                 run_check_workflow()
             
             with open(output_file, 'r') as f:
                 content = f.read()
-            assert 'has_updates=true' in content
             assert 'files=0:0' in content
+            assert 'has_updates=true' in content
         finally:
             os.unlink(output_file)
 
