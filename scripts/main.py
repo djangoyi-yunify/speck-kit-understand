@@ -59,7 +59,7 @@ def translate_files(
     updates: list[FileUpdate],
     llm_client: LLMClient,
     github_token: str
-) -> dict[str, bool]:
+) -> tuple[dict[str, bool], dict[str, str]]:
     """翻译文件
     
     Args:
@@ -69,9 +69,10 @@ def translate_files(
         github_token: GitHub token
         
     Returns:
-        {"文件路径": 是否成功}
+        ({"文件路径": 是否成功}, {"文件路径": SHA})
     """
     results = {}
+    shas = {}
     
     prefix = f"{config.source_repo}-{config.source_branch}".replace("/", "-")
     
@@ -102,12 +103,13 @@ def translate_files(
                 write_file(source_path, github_file.content)
             
             results[update.file_config.source] = True
+            shas[update.file_config.source] = github_file.sha
             
         except Exception as e:
             print(f"Error translating {update.file_config.source}: {e}")
             results[update.file_config.source] = False
     
-    return results
+    return results, shas
 
 
 def run_check_workflow() -> None:
@@ -183,11 +185,11 @@ def run_translate_workflow() -> None:
                 ))
     
     if updates:
-        results = translate_files(config, updates, llm_client, github_token)
+        results, shas = translate_files(config, updates, llm_client, github_token)
         
-        for update in updates:
-            if results.get(update.file_config.source, False):
-                save_sha(config, update.file_config.source, update.new_sha)
+        for source, sha in shas.items():
+            if results.get(source, False):
+                save_sha(config, source, sha)
         
         print(f"Translation completed. Results: {results}")
     else:

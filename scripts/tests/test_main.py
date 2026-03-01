@@ -118,9 +118,10 @@ class TestTranslateFiles:
         )]
         
         mock_client = Mock()
-        results = translate_files(config, updates, mock_client, "token")
+        results, shas = translate_files(config, updates, mock_client, "token")
         
         assert results == {"a.md": True}
+        assert shas == {"a.md": "abc"}
         mock_write.assert_called()
 
     @patch('scripts.main.download_file')
@@ -152,9 +153,10 @@ class TestTranslateFiles:
         )]
         
         mock_client = Mock()
-        results = translate_files(config, updates, mock_client, "token")
+        results, shas = translate_files(config, updates, mock_client, "token")
         
         assert results == {"a.md": False}
+        assert shas == {}
 
     @patch('scripts.main.download_file')
     @patch('scripts.main.translate_markdown')
@@ -353,7 +355,7 @@ class TestRunTranslateWorkflow:
             )]
         )
         mock_get_client.return_value = Mock()
-        mock_translate.return_value = {"a.md": True}
+        mock_translate.return_value = ({"a.md": True}, {"a.md": "sha123"})
         
         env = {
             'GITHUB_TOKEN': 'test_token',
