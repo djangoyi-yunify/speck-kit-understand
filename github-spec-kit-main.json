@@ -21,6 +21,58 @@
           "target": "constitution-template.cn.md"
         }
       ]
+    },
+    {
+      "name": "01-specify",
+      "target_dir": "01-specify",
+      "include_source": true,
+      "files": [
+        {
+          "source": "templates/commands/specify.md",
+          "target": "specify.cn.md"
+        }
+      ]
+    },
+    {
+      "name": "02-plan",
+      "target_dir": "02-plan",
+      "include_source": true,
+      "files": [
+        {
+          "source": "templates/commands/plan.md",
+          "target": "plan.cn.md"
+        },
+        {
+          "source": "templates/plan-template.md",
+          "target": "plan-template.cn.md"
+        }
+      ]
+    },
+    {
+      "name": "03-tasks",
+      "target_dir": "03-tasks",
+      "include_source": true,
+      "files": [
+        {
+          "source": "templates/commands/tasks.md",
+          "target": "tasks.cn.md"
+        },
+        {
+          "source": "templates/tasks-template.md",
+          "target": "tasks-template.cn.md"
+        }
+      ]
+    },
+    {
+      "name": "04-implement",
+      "target_dir": "04-implement",
+      "include_source": true,
+      "files": [
+        {
+          "source": "templates/commands/implement.md",
+          "target": "implement.cn.md"
+        }
+      ]
     }
   ]
 }
