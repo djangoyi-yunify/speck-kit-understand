@@ -82,6 +82,10 @@
         {
           "source": "templates/commands/checklist.md",
           "target": "checklist.cn.md"
+        },
+        {
+          "source": "templates/checklist-template.md",
+          "target": "checklist-template.cn.md"
         }
       ]
     }
