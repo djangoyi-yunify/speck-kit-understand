@@ -30,6 +30,10 @@
         {
           "source": "templates/commands/specify.md",
           "target": "specify.cn.md"
+        },
+        {
+          "source": "templates/spec-template.md",
+          "target": "spec-template.cn.md"
         }
       ]
     },
