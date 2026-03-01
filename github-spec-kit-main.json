@@ -73,6 +73,17 @@
           "target": "implement.cn.md"
         }
       ]
+    },
+    {
+      "name": "05-checklist",
+      "target_dir": "05-checklist",
+      "include_source": true,
+      "files": [
+        {
+          "source": "templates/commands/checklist.md",
+          "target": "checklist.cn.md"
+        }
+      ]
     }
   ]
 }
