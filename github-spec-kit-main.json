@@ -92,6 +92,39 @@
           "target": "checklist-template.cn.md"
         }
       ]
+    },
+    {
+      "name": "06-analyze",
+      "target_dir": "06-analyze",
+      "include_source": true,
+      "files": [
+        {
+          "source": "templates/commands/analyze.md",
+          "target": "analyze.cn.md"
+        }
+      ]
+    },
+    {
+      "name": "07-clarify",
+      "target_dir": "07-clarify",
+      "include_source": true,
+      "files": [
+        {
+          "source": "templates/commands/clarify.md",
+          "target": "clarify.cn.md"
+        }
+      ]
+    },
+    {
+      "name": "08-taskstoissues",
+      "target_dir": "08-taskstoissues",
+      "include_source": true,
+      "files": [
+        {
+          "source": "templates/commands/taskstoissues.md",
+          "target": "taskstoissues.cn.md"
+        }
+      ]
     }
   ]
 }
