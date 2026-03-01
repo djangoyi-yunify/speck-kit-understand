@@ -122,21 +122,20 @@ def run_check_workflow() -> None:
     
     updates = check_updates(config, github_token)
     
-    if updates:
-        print(f"Found {len(updates)} files to translate:")
-        for update in updates:
-            print(f"  - {update.file_config.source}")
-        
-        files_json = ','.join([
-            f'{u.group_idx}:{u.file_idx}'
-            for u in updates
-        ])
-        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+    with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+        if updates:
+            print(f"Found {len(updates)} files to translate:")
+            for update in updates:
+                print(f"  - {update.file_config.source}")
+            
+            files_json = ','.join([
+                f'{u.group_idx}:{u.file_idx}'
+                for u in updates
+            ])
             f.write(f"files={files_json}\n")
             f.write("has_updates=true\n")
-    else:
-        print("No files need translation")
-        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+        else:
+            print("No files need translation")
             f.write("has_updates=false\n")
 
 
