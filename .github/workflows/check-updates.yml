@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '0 0 * * *'
   workflow_dispatch:
+    inputs:
+      config_path:
+        required: false
+        type: string
+        default: 'translation-config.json'
+        description: 'Path to translation config file'
 
 jobs:
   check-updates:
@@ -32,7 +38,7 @@ jobs:
         id: check
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-          CONFIG_PATH: translation-config.json
+          CONFIG_PATH: ${{ inputs.config_path || 'translation-config.json' }}
         run: |
           python -c "
           import os
@@ -45,5 +51,5 @@ jobs:
         uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: translate-docs.yml
-          inputs: '{ "files": "${{ steps.check.outputs.files }}" }'
+          inputs: '{"files": "${{ steps.check.outputs.files }}", "config_path": "${{ inputs.config_path }}"}'
           token: ${{ secrets.PAT_TOKEN }}

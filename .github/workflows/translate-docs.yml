@@ -7,6 +7,11 @@ on:
         required: true
         type: string
         description: 'Files to translate in format "group_idx:file_idx,group_idx:file_idx"'
+      config_path:
+        required: false
+        type: string
+        default: 'translation-config.json'
+        description: 'Path to translation config file'
   
   workflow_dispatch:
     inputs:
@@ -15,6 +20,11 @@ on:
         type: string
         default: ''
         description: 'Files to translate (optional, will check all if empty)'
+      config_path:
+        required: false
+        type: string
+        default: 'translation-config.json'
+        description: 'Path to translation config file'
 
 jobs:
   translate:
@@ -45,7 +55,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
           LLM_API_KEY: ${{ secrets.QINGCLOUD_API_KEY }}
-          CONFIG_PATH: translation-config.json
+          CONFIG_PATH: ${{ inputs.config_path }}
           FILES: ${{ inputs.files }}
         run: |
           python -c "
