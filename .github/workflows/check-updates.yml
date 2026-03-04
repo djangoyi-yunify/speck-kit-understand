@@ -4,11 +4,6 @@ on:
   schedule:
     - cron: '0 0 * * *'
   workflow_dispatch:
-    inputs:
-      config_path:
-        required: false
-        type: string
-        description: 'Path to translation config file'
 
 jobs:
   check-updates:
@@ -37,10 +32,11 @@ jobs:
         id: check
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-          CONFIG_PATH: ${{ inputs.config_path }}
         run: |
+          CONFIG_PATH=$(python -c "import json; print(json.load(open('check_updates.json'))['config_path'])")
+          echo "config_path=$CONFIG_PATH" >> $GITHUB_OUTPUT
+          export CONFIG_PATH=$CONFIG_PATH
           python -c "
-          import os
           from scripts.main import run_check_workflow
           run_check_workflow()
           "
@@ -51,5 +47,5 @@ jobs:
         with:
           workflow: translate-docs.yml
           inputs: |
-            {"files": "${{ steps.check.outputs.files }}", "config_path": "${{ inputs.config_path }}"}
+            {"files": "${{ steps.check.outputs.files }}", "config_path": "${{ steps.check.outputs.config_path }}"}
           token: ${{ secrets.PAT_TOKEN }}
