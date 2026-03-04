@@ -10,7 +10,6 @@ on:
       config_path:
         required: false
         type: string
-        default: 'demo.json'
         description: 'Path to translation config file'
   
   workflow_dispatch:
@@ -23,7 +22,6 @@ on:
       config_path:
         required: false
         type: string
-        default: 'demo.json'
         description: 'Path to translation config file'
 
 jobs:

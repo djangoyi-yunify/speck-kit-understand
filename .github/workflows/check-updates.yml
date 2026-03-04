@@ -8,7 +8,6 @@ on:
       config_path:
         required: false
         type: string
-        default: 'demo.json'
         description: 'Path to translation config file'
 
 jobs:
@@ -38,7 +37,7 @@ jobs:
         id: check
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-          CONFIG_PATH: ${{ inputs.config_path || 'demo.json' }}
+          CONFIG_PATH: ${{ inputs.config_path }}
         run: |
           python -c "
           import os
@@ -52,5 +51,5 @@ jobs:
         with:
           workflow: translate-docs.yml
           inputs: |
-            {"files": "${{ steps.check.outputs.files }}", "config_path": "${{ inputs.config_path || 'demo.json' }}"}
+            {"files": "${{ steps.check.outputs.files }}", "config_path": "${{ inputs.config_path }}"}
           token: ${{ secrets.PAT_TOKEN }}
