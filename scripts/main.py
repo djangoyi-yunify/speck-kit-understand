@@ -1,4 +1,5 @@
 import os
+import time
 from dataclasses import dataclass
 from typing import Optional
 
@@ -84,6 +85,7 @@ def translate_files(
         group = config.groups[update.group_idx]
         target_dir = os.path.join(prefix, group.target_dir)
         
+        file_start_time = time.time()
         print(f"[{idx}/{total}] Processing: {update.file_config.source}")
         print(f"  Group: {group.name} -> {group.target_dir}")
         
@@ -98,10 +100,13 @@ def translate_files(
             print(f"  Source SHA: {github_file.sha}")
             
             print(f"  Translating content...")
+            translate_start = time.time()
             translated_content = translate_markdown(
                 llm_client,
                 github_file.content
             )
+            translate_time = time.time() - translate_start
+            print(f"  Translation completed in {translate_time:.2f}s")
             
             ensure_dir(target_dir)
             target_path = os.path.join(target_dir, update.file_config.target)
@@ -116,10 +121,13 @@ def translate_files(
             
             results[update.file_config.source] = True
             shas[update.file_config.source] = github_file.sha
-            print(f"  ✓ Success\n")
+            
+            total_time = time.time() - file_start_time
+            print(f"  ✓ Success (Total: {total_time:.2f}s)\n")
             
         except Exception as e:
-            print(f"  ✗ Error: {e}\n")
+            total_time = time.time() - file_start_time
+            print(f"  ✗ Error: {e} (Time: {total_time:.2f}s)\n")
             results[update.file_config.source] = False
     
     print(f"{'='*60}")
