@@ -9,12 +9,42 @@
   "groups": [
     {
       "name": "root",
-      "target_dir": "anthropics-skills",
+      "target_dir": "",
       "include_source": true,
       "files": [
         {
           "source": "README.md",
           "target": "README.cn.md"
+        }
+      ]
+    },
+    {
+      "name": "skill-creator",
+      "target_dir": "skills/skill-creator",
+      "include_source": true,
+      "files": [
+        {
+          "source": "skills/skill-creator/SKILL.md",
+          "target": "SKILL.cn.md"
+        }
+      ]
+    },
+    {
+      "name": "skill-creator-agents",
+      "target_dir": "skills/skill-creator/agents",
+      "include_source": true,
+      "files": [
+        {
+          "source": "skills/skill-creator/agents/analyzer.md",
+          "target": "analyzer.cn.md"
+        },
+        {
+          "source": "skills/skill-creator/agents/comparator.md",
+          "target": "comparator.cn.md"
+        },
+        {
+          "source": "skills/skill-creator/agents/grader.md",
+          "target": "grader.cn.md"
         }
       ]
     }
