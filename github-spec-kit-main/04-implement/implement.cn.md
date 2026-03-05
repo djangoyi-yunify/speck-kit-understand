@@ -5,122 +5,207 @@ scripts:
   ps: scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks
 ---
 
-## 用户输入```text
+## 用户输入
+
+```text
 $ARGUMENTS
-```在继续执行之前，你 **必须** 考虑用户输入（如果不为空）。
+```
 
-## 大纲
+在继续之前，你**必须**考虑用户输入（如果非空）。
 
-1. 从仓库根目录运行 `{SCRIPT}` 并解析 FEATURE_DIR 和 AVAILABLE_DOCS 列表。所有路径必须为绝对路径。对于参数中的单引号（如 "I'm Groot"），请使用转义语法：例如 'I'\''m Groot'（或者尽可能使用双引号："I'm Groot"）。
+## 执行前检查
 
-2. **检查 checklist 状态**（如果 FEATURE_DIR/checklists/ 存在）：
+**检查扩展钩子（实现前）**：
+- 检查项目根目录下是否存在 `.specify/extensions.yml`。
+- 如果存在，读取该文件并查找 `hooks.before_implement` 键下的条目。
+- 如果无法解析 YAML 或其无效，则静默跳过钩子检查并正常继续。
+- 仅筛选 `enabled: true` 的钩子。
+- 对于每个剩余的钩子，**不要**尝试解释或评估钩子的 `condition` 表达式：
+  - 如果钩子没有 `condition` 字段，或者该字段为 null/空，则将该钩子视为可执行。
+  - 如果钩子定义了非空的 `condition`，则跳过该钩子并将条件评估留给 HookExecutor 实现。
+- 对于每个可执行的钩子，根据其 `optional` 标志输出以下内容：
+  - **可选钩子**（`optional: true`）：
+
+```
+## Extension Hooks
+
+    **Optional Pre-Hook**: {extension}
+    Command: `/{command}`
+    Description: {description}
+
+    Prompt: {prompt}
+    To execute: `/{command}`
+```
+
+- **强制 hook** (`optional: false`)：
+
+```
+## Extension Hooks
+
+    **Automatic Pre-Hook**: {extension}
+    Executing: `/{command}`
+    EXECUTE_COMMAND: {command}
+    
+    Wait for the result of the hook command before proceeding to the Outline.
+```
+
+- 如果未注册 hooks 或 `.specify/extensions.yml` 不存在，则静默跳过
+
+## 概述
+
+1. 从 repo 根目录运行 `{SCRIPT}` 并解析 FEATURE_DIR 和 AVAILABLE_DOCS 列表。所有路径必须是绝对路径。对于参数中的单引号（如 "I'm Groot"），请使用转义语法：例如 'I'\''m Groot'（或者如果可能，使用双引号："I'm Groot"）。
+
+2. **检查 checklists 状态**（如果 FEATURE_DIR/checklists/ 存在）：
    - 扫描 checklists/ 目录下的所有 checklist 文件
    - 对于每个 checklist，统计：
-     - 总项数：所有匹配 `- [ ]` 或 `- [X]` 或 `- [x]` 的行
-     - 已完成项：匹配 `- [X]` 或 `- [x]` 的行
-     - 未完成项：匹配 `- [ ]` 的行
-   - 创建状态表：```text
+     - 总条目数：所有匹配 `- [ ]`、`- [X]` 或 `- [x]` 的行
+     - 已完成条目数：匹配 `- [X]` 或 `- [x]` 的行
+     - 未完成条目数：匹配 `- [ ]` 的行
+   - 创建一个状态表：
+
+```text
 | Checklist | Total | Completed | Incomplete | Status |
      |-----------|-------|-----------|------------|--------|
      | ux.md     | 12    | 12        | 0          | ✓ PASS |
      | test.md   | 8     | 5         | 3          | ✗ FAIL |
      | security.md | 6   | 6         | 0          | ✓ PASS |
-```- 计算总体状态：
-  - **PASS**：所有检查清单均无未完成项
-  - **FAIL**：一个或多个检查清单含有未完成项
+```
 
-- **如果任何检查清单未完成**：
-  - 显示包含未完成项计数的表格
-  - **停止** 并询问：“部分检查清单未完成。是否仍要继续实施？(yes/no)”
-  - 在继续之前等待用户响应
-  - 如果用户回答 “no”、“wait” 或 “stop”，则停止执行
-  - 如果用户回答 “yes”、“proceed” 或 “continue”，则进入步骤 3
+   - 计算整体状态：
+     - **PASS**：所有 checklist 的未完成项均为 0
+     - **FAIL**：一个或多个 checklist 存在未完成项
 
-- **如果所有检查清单已完成**：
-  - 显示所有检查清单均已通过的表格
-  - 自动进入步骤 3
+   - **如果存在未完成的 checklist**：
+     - 显示包含未完成项数量的表格
+     - **停止** 并询问：“部分 checklist 未完成。是否仍要继续实施？"
+     - 在继续之前等待用户响应
+     - 如果用户回答 "no"、"wait" 或 "stop"，则终止执行
+     - 如果用户回答 "yes"、"proceed" 或 "continue"，则进入步骤 3
 
-3. 加载并分析实施上下文：
+   - **如果所有 checklist 均已完成**：
+     - 显示所有 checklist 均已通过的表格
+     - 自动进入步骤 3
+
+3. 加载并分析实现上下文：
    - **必须**：读取 tasks.md 以获取完整任务列表和执行计划
-   - **必须**：读取 plan.md 以了解技术栈、架构和文件结构
-   - **如存在**：读取 data-model.md 以了解实体和关系
-   - **如存在**：读取 contracts/ 以了解 API 规范和测试需求
-   - **如存在**：读取 research.md 以了解技术决策和约束
-   - **如存在**：读取 quickstart.md 以了解集成场景
+   - **必须**：读取 plan.md 以获取技术栈、架构和文件结构
+   - **如存在**：读取 data-model.md 以获取实体和关系
+   - **如存在**：读取 contracts/ 以获取 API 规范和测试需求
+   - **如存在**：读取 research.md 以获取技术决策和约束
+   - **如存在**：读取 quickstart.md 以获取集成场景
 
 4. **项目设置验证**：
-   - **必须**：根据实际项目设置创建/验证忽略文件：
+   - **必须**：根据实际项目设置创建/验证 ignore 文件：
 
    **检测与创建逻辑**：
-   - 检查以下命令是否成功执行，以确定代码库是否为 git repo（如果是，则创建/验证 .gitignore）：```sh
+   - 检查以下命令是否执行成功，以确定仓库是否为 git repo（如果是，则创建/验证 .gitignore）：
+
+     
+
+```sh
 git rev-parse --git-dir 2>/dev/null
-```- 检查是否存在 Dockerfile* 或 plan.md 中包含 Docker → 创建/验证 .dockerignore
-- 检查是否存在 .eslintrc* → 创建/验证 .eslintignore
-- 检查是否存在 eslint.config.* → 确保配置的 `ignores` 条目涵盖所需模式
-- 检查是否存在 .prettierrc* → 创建/验证 .prettierignore
-- 检查是否存在 .npmrc 或 package.json → 创建/验证 .npmignore（如需发布）
-- 检查是否存在 terraform 文件 → 创建/验证 .terraformignore
-- 检查是否需要 .helmignore（存在 helm charts） → 创建/验证 .helmignore
+```
 
-**如果 ignore 文件已存在**：验证其是否包含基本模式，仅追加缺失的关键模式
-**如果 ignore 文件缺失**：根据检测到的技术使用完整模式集创建
+   - 检查 Dockerfile* 是否存在或 plan.md 中是否有 Docker → 创建/验证 .dockerignore
+   - 检查 .eslintrc* 是否存在 → 创建/验证 .eslintignore
+   - 检查 eslint.config.* 是否存在 → 确保配置中的 `ignores` 条目覆盖所需模式
+   - 检查 .prettierrc* 是否存在 → 创建/验证 .prettierignore
+   - 检查 .npmrc 或 package.json 是否存在 → 创建/验证 .npmignore（如果发布）
+   - 检查 terraform 文件 (*.tf) 是否存在 → 创建/验证 .terraformignore
+   - 检查是否需要 .helmignore（存在 helm charts）→ 创建/验证 .helmignore
 
-**各技术的通用模式**（来自 plan.md 技术栈）：
-- **Node.js/JavaScript/TypeScript**: `node_modules/`, `dist/`, `build/`, `*.log`, `.env*`
-- **Python**: `__pycache__/`, `*.pyc`, `.venv/`, `venv/`, `dist/`, `*.egg-info/`
-- **Java**: `target/`, `*.class`, `*.jar`, `.gradle/`, `build/`
-- **C#/.NET**: `bin/`, `obj/`, `*.user`, `*.suo`, `packages/`
-- **Go**: `*.exe`, `*.test`, `vendor/`, `*.out`
-- **Ruby**: `.bundle/`, `log/`, `tmp/`, `*.gem`, `vendor/bundle/`
-- **PHP**: `vendor/`, `*.log`, `*.cache`, `*.env`
-- **Rust**: `target/`, `debug/`, `release/`, `*.rs.bk`, `*.rlib`, `*.prof*`, `.idea/`, `*.log`, `.env*`
-- **Kotlin**: `build/`, `out/`, `.gradle/`, `.idea/`, `*.class`, `*.jar`, `*.iml`, `*.log`, `.env*`
-- **C++**: `build/`, `bin/`, `obj/`, `out/`, `*.o`, `*.so`, `*.a`, `*.exe`, `*.dll`, `.idea/`, `*.log`, `.env*`
-- **C**: `build/`, `bin/`, `obj/`, `out/`, `*.o`, `*.a`, `*.so`, `*.exe`, `Makefile`, `config.log`, `.idea/`, `*.log`, `.env*`
-- **Swift**: `.build/`, `DerivedData/`, `*.swiftpm/`, `Packages/`
-- **R**: `.Rproj.user/`, `.Rhistory`, `.RData`, `.Ruserdata`, `*.Rproj`, `packrat/`, `renv/`
-- **通用**: `.DS_Store`, `Thumbs.db`, `*.tmp`, `*.swp`, `.vscode/`, `.idea/`
+   **如果 ignore 文件已存在**：验证其包含基本模式，仅追加缺失的关键模式
+   **如果 ignore 文件缺失**：使用检测到的技术的完整模式集进行创建
 
-**工具特定模式**：
-- **Docker**: `node_modules/`, `.git/`, `Dockerfile*`, `.dockerignore`, `*.log*`, `.env*`, `coverage/`
-- **ESLint**: `node_modules/`, `dist/`, `build/`, `coverage/`, `*.min.js`
-- **Prettier**: `node_modules/`, `dist/`, `build/`, `coverage/`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`
-- **Terraform**: `.terraform/`, `*.tfstate*`, `*.tfvars`, `.terraform.lock.hcl`
-- **Kubernetes/k8s**: `*.secret.yaml`, `secrets/`, `.kube/`, `kubeconfig*`, `*.key`, `*.crt`
+   **按技术划分的通用模式**（来自 plan.md 技术栈）：
+   - **Node.js/JavaScript/TypeScript**: `node_modules/`, `dist/`, `build/`, `*.log`, `.env*`
+   - **Python**: `__pycache__/`, `*.pyc`, `.venv/`, `venv/`, `dist/`, `*.egg-info/`
+   - **Java**: `target/`, `*.class`, `*.jar`, `.gradle/`, `build/`
+   - **C#/.NET**: `bin/`, `obj/`, `*.user`, `*.suo`, `packages/`
+   - **Go**: `*.exe`, `*.test`, `vendor/`, `*.out`
+   - **Ruby**: `.bundle/`, `log/`, `tmp/`, `*.gem`, `vendor/bundle/`
+   - **PHP**: `vendor/`, `*.log`, `*.cache`, `*.env`
+   - **Rust**: `target/`, `debug/`, `release/`, `*.rs.bk`, `*.rlib`, `*.prof*`, `.idea/`, `*.log`, `.env*`
+   - **Kotlin**: `build/`, `out/`, `.gradle/`, `.idea/`, `*.class`, `*.jar`, `*.iml`, `*.log`, `.env*`
+   - **C++**: `build/`, `bin/`, `obj/`, `out/`, `*.o`, `*.so`, `*.a`, `*.exe`, `*.dll`, `.idea/`, `*.log`, `.env*`
+   - **C**: `build/`, `bin/`, `obj/`, `out/`, `*.o`, `*.a`, `*.so`, `*.exe`, `*.dll`, `autom4te.cache/`, `config.status`, `config.log`, `.idea/`, `*.log`, `.env*`
+   - **Swift**: `.build/`, `DerivedData/`, `*.swiftpm/`, `Packages/`
+   - **R**: `.Rproj.user/`, `.Rhistory`, `.RData`, `.Ruserdata`, `*.Rproj`, `packrat/`, `renv/`
+   - **通用**: `.DS_Store`, `Thumbs.db`, `*.tmp`, `*.swp`, `.vscode/`, `.idea/`
+
+   **工具特定模式**：
+   - **Docker**: `node_modules/`, `.git/`, `Dockerfile*`, `.dockerignore`, `*.log*`, `.env*`, `coverage/`
+   - **ESLint**: `node_modules/`, `dist/`, `build/`, `coverage/`, `*.min.js`
+   - **Prettier**: `node_modules/`, `dist/`, `build/`, `coverage/`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`
+   - **Terraform**: `.terraform/`, `*.tfstate*`, `*.tfvars`, `.terraform.lock.hcl`
+   - **Kubernetes/k8s**: `*.secret.yaml`, `secrets/`, `.kube/`, `kubeconfig*`, `*.key`, `*.crt`
 
 5. 解析 tasks.md 结构并提取：
-- **任务阶段**：Setup, Tests, Core, Integration, Polish
-- **任务依赖**：顺序与并行执行规则
-- **任务详情**：ID、描述、文件路径、并行标记 [P]
-- **执行流程**：顺序与依赖要求
+   - **任务阶段**：Setup, Tests, Core, Integration, Polish
+   - **任务依赖**：顺序执行与并行执行规则
+   - **任务详情**：ID、描述、文件路径、并行标记 [P]
+   - **执行流程**：顺序和依赖要求
 
 6. 按照任务计划执行实现：
-- **逐阶段执行**：完成当前阶段后再进入下一阶段
-- **遵循依赖关系**：按顺序运行串行任务，并行任务 [P] 可同时运行
-- **遵循 TDD 方法**：在执行对应实现任务前先执行测试任务
-- **基于文件的协调**：影响相同文件的任务必须按顺序运行
-- **验证检查点**：在继续之前验证每个阶段的完成情况
+   - **逐阶段执行**：完成当前阶段后再进入下一阶段
+   - **遵循依赖关系**：按顺序运行顺序任务，并行任务 [P] 可同时运行
+   - **遵循 TDD 方法**：在执行相应实现任务之前先执行测试任务
+   - **基于文件的协调**：影响相同文件的任务必须按顺序运行
+   - **验证检查点**：继续之前验证每个阶段的完成情况
 
 7. 实现执行规则：
-- **Setup 优先**：初始化项目结构、依赖、配置
-- **先写测试**：如需为 contracts、entities 和集成场景编写测试
-- **核心开发**：实现 models、services、CLI commands、endpoints
-- **集成工作**：数据库连接、middleware、日志记录、外部服务
-- **Polish 与验证**：单元测试、性能优化、文档编写
+   - **优先设置**：初始化项目结构、依赖、配置
+   - **先测试后编码**：如果需要为契约、实体和集成场景编写测试
+   - **核心开发**：实现模型、服务、CLI 命令、端点
+   - **集成工作**：数据库连接、中间件、日志记录、外部服务
+   - **完善与验证**：单元测试、性能优化、文档
 
 8. 进度跟踪与错误处理：
-- 每完成一项任务后报告进度
-- 如果任何非并行任务失败，则停止执行
-- 对于并行任务 [P]，继续执行成功的任务，报告失败的任务
-- 提供包含上下文的清晰错误信息以便调试
-- 如果无法继续实现，建议后续步骤
-- **重要** 对于已完成的任务，确保在 tasks 文件中将其标记为 [X]。
+   - 每完成一个任务后报告进度
+   - 如果任何非并行任务失败，则停止执行
+   - 对于并行任务 [P]，继续执行成功的任务，报告失败的任务
+   - 提供带有调试上下文的清晰错误信息
+   - 如果无法继续实现，建议后续步骤
+   - **重要** 对于已完成的任务，确保在任务文件中将任务标记为 [X]。
 
 9. 完成验证：
-- 验证所有必需任务均已完成
-- 检查实现的功能是否符合原始规范
-- 确认测试通过且覆盖率满足要求
-- 确认实现遵循技术计划
-- 报告最终状态及已完成工作摘要
+   - 验证所有必需任务已完成
+   - 检查实现的功能是否符合原始规范
+   - 验证测试通过且覆盖率满足要求
+   - 确认实现遵循技术计划
+   - 报告最终状态及已完成工作摘要
 
-注意：此命令假设 tasks.md 中存在完整的任务分解。如果任务不完整或缺失，建议先运行 `/speckit.tasks` 重新生成任务列表。
+注意：此命令假定 tasks.md 中存在完整的任务分解。如果任务不完整或缺失，建议先运行 `/speckit.tasks` 以重新生成任务列表。
+
+10. **检查扩展钩子**：完成验证后，检查项目根目录中是否存在 `.specify/extensions.yml`。
+    - 如果存在，读取该文件并查找 `hooks.after_implement` 键下的条目
+    - 如果 YAML 无法解析或无效，静默跳过钩子检查并正常继续
+    - 仅筛选 `enabled: true` 的钩子
+    - 对于每个剩余的钩子，**不要**尝试解释或评估钩子的 `condition` 表达式：
+      - 如果钩子没有 `condition` 字段，或其值为 null/空，则将该钩子视为可执行
+      - 如果钩子定义了非空的 `condition`，则跳过该钩子并将条件评估留给 HookExecutor 实现
+    - 对于每个可执行钩子，根据其 `optional` 标志输出以下内容：
+      - **可选钩子**（`optional: true`）：
+
+```
+## Extension Hooks
+
+        **Optional Hook**: {extension}
+        Command: `/{command}`
+        Description: {description}
+
+        Prompt: {prompt}
+        To execute: `/{command}`
+```
+
+- **强制 hook** (`optional: false`)：
+
+```
+## Extension Hooks
+
+        **Automatic Hook**: {extension}
+        Executing: `/{command}`
+        EXECUTE_COMMAND: {command}
+```
+
+- 如果没有注册 hooks 或 `.specify/extensions.yml` 不存在，则静默跳过
