@@ -55,6 +55,7 @@ jobs:
           LLM_API_KEY: ${{ secrets.QINGCLOUD_API_KEY }}
           CONFIG_PATH: ${{ inputs.config_path }}
           FILES: ${{ inputs.files }}
+          PYTHONUNBUFFERED: 1
         run: |
           python -c "
           from scripts.main import run_translate_workflow
