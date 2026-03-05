@@ -73,19 +73,31 @@ def translate_files(
     shas = {}
     
     prefix = f"{config.source_repo}-{config.source_branch}".replace("/", "-")
+    total = len(updates)
     
-    for update in updates:
+    print(f"\n{'='*60}")
+    print(f"Starting translation: {total} file(s) to process")
+    print(f"Config: {config.source_repo}/{config.source_branch}")
+    print(f"{'='*60}\n")
+    
+    for idx, update in enumerate(updates, 1):
         group = config.groups[update.group_idx]
         target_dir = os.path.join(prefix, group.target_dir)
         
+        print(f"[{idx}/{total}] Processing: {update.file_config.source}")
+        print(f"  Group: {group.name} -> {group.target_dir}")
+        
         try:
+            print(f"  Downloading source file...")
             github_file = download_file(
                 config.source_repo,
                 config.source_branch,
                 update.file_config.source,
                 github_token
             )
+            print(f"  Source SHA: {github_file.sha}")
             
+            print(f"  Translating content...")
             translated_content = translate_markdown(
                 llm_client,
                 github_file.content
@@ -94,18 +106,27 @@ def translate_files(
             ensure_dir(target_dir)
             target_path = os.path.join(target_dir, update.file_config.target)
             write_file(target_path, translated_content)
+            print(f"  Saved to: {target_path}")
             
             if group.include_source:
                 source_filename = os.path.basename(update.file_config.source)
                 source_path = os.path.join(target_dir, source_filename)
                 write_file(source_path, github_file.content)
+                print(f"  Source saved to: {source_path}")
             
             results[update.file_config.source] = True
             shas[update.file_config.source] = github_file.sha
+            print(f"  ✓ Success\n")
             
         except Exception as e:
-            print(f"Error translating {update.file_config.source}: {e}")
+            print(f"  ✗ Error: {e}\n")
             results[update.file_config.source] = False
+    
+    print(f"{'='*60}")
+    print(f"Translation completed")
+    print(f"  Success: {sum(results.values())}/{total}")
+    print(f"  Failed: {total - sum(results.values())}/{total}")
+    print(f"{'='*60}\n")
     
     return results, shas
 
@@ -155,6 +176,13 @@ def run_translate_workflow() -> None:
     github_token = os.environ.get('GITHUB_TOKEN')
     llm_api_key = os.environ.get('LLM_API_KEY')
     files_input = os.environ.get('FILES', '')
+    
+    print(f"\n{'='*60}")
+    print(f"Translate Workflow Started")
+    print(f"{'='*60}")
+    print(f"Config path: {config_path}")
+    print(f"Files input: {files_input or 'All files'}")
+    print(f"{'='*60}\n")
     
     if not github_token:
         raise ValueError("GITHUB_TOKEN environment variable is required")
