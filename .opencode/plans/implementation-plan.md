@@ -64,42 +64,49 @@ git commit -m "feat: complete phase 1 - basic modules (config, file_ops)"
 |------|------|----------|
 | `load_config(path)` | 加载配置文件 | 有效配置、无效路径、格式错误 |
 | `save_config(config, path)` | 保存配置文件 | 保存成功、路径不存在 |
-| `update_file_sha(config, group_idx, file_idx, sha)` | 更新文件 SHA | 更新成功、索引越界 |
 | `get_files_to_translate(config)` | 获取所有文件列表 | 返回正确列表 |
 
-### 模块 2：GitHub API (`github_api.py`)
+### 模块 2：SHA 追踪 (`sha_tracker.py`)
 
 | 函数 | 功能 | 测试用例 |
 |------|------|----------|
-| `get_file_sha(repo, branch, path, token)` | 获取文件最新 SHA | 成功获取、文件不存在、权限错误 |
+| `get_sha(config, source)` | 获取文件的 SHA | 存在、不存在 |
+| `save_sha(config, source, sha)` | 保存文件的 SHA | 保存成功、更新 |
+| `load_shas(config)` | 加载所有 SHA | 正确加载、文件不存在 |
+| `save_all_shas(config, shas)` | 批量保存 SHA | 批量保存 |
+
+### 模块 3：GitHub API (`github_api.py`)
+
+| 函数 | 功能 | 测试用例 |
+|------|------|----------|
+| `get_file_sha(repo, branch, path, token)` | 获取文件最新 blob SHA | 成功获取、文件不存在、权限错误 |
 | `download_file(repo, branch, path, token)` | 下载文件内容 | 成功下载、文件不存在 |
 | `get_rate_limit(token)` | 获取 API 限制 | 成功获取 |
 
-### 模块 3：LLM 翻译 (`translator.py`)
+### 模块 4：LLM 翻译 (`translator.py`)
 
-| 函数 | 功能 | 测试用例 |
-|------|------|----------|
-| `get_llm_client(provider, model, base_url, api_key)` | 获取 LLM 客户端 | 各提供商初始化 |
-| `translate_text(client, text, target_lang)` | 翻译文本 | 简单文本、Markdown、代码块 |
+| 函数/类 | 功能 | 测试用例 |
+|---------|------|----------|
+| `get_llm_client(provider, model, base_url, api_key)` | 获取 LLM 客户端 | qingcloud/openai/anthropic |
+| `translate_text(client, text)` | 翻译文本 | 简单文本 |
 | `split_markdown_sections(content)` | 分割 Markdown 区块 | 标题、代码块、普通段落 |
 | `merge_sections(sections)` | 合并翻译后的区块 | 正确合并 |
-| `translate_markdown(client, content)` | 翻译 Markdown（保留代码块） | 代码块不翻译、表格保留 |
+| `translate_markdown(client, content)` | 翻译 Markdown（保留代码块） | 代码块不翻译 |
 
-### 模块 4：文件操作 (`file_ops.py`)
+### 模块 5：文件操作 (`file_ops.py`)
 
 | 函数 | 功能 | 测试用例 |
 |------|------|----------|
 | `ensure_dir(path)` | 确保目录存在 | 创建成功、已存在 |
 | `write_file(path, content)` | 写入文件 | 成功写入、目录不存在 |
 | `read_file(path)` | 读取文件 | 成功读取、文件不存在 |
-| `get_source_filename(target_filename)` | 获取原文对照文件名 | `README.md` → `README.en.md` |
 
-### 模块 5：主流程 (`main.py`)
+### 模块 6：主流程 (`main.py`)
 
 | 函数 | 功能 | 测试用例 |
 |------|------|----------|
 | `check_updates(config, github_token)` | 检测更新 | 有更新、无更新、API 错误 |
-| `translate_files(config, files, llm_client, github_token)` | 翻译文件 | 成功翻译、部分失败 |
+| `translate_files(config, updates, llm_client, github_token)` | 翻译文件 | 成功翻译、部分失败 |
 | `run_check_workflow()` | 检测工作流入口 | 集成测试 |
 | `run_translate_workflow()` | 翻译工作流入口 | 集成测试 |
 
@@ -113,20 +120,26 @@ git commit -m "feat: complete phase 1 - basic modules (config, file_ops)"
    ├── load_config()
    ├── test_save_config()
    ├── save_config()
-   ├── test_update_file_sha()
-   ├── update_file_sha()
    ├── test_get_files_to_translate()
    └── get_files_to_translate()
 
-2. file_ops.py
+2. sha_tracker.py
+   ├── test_get_sha()
+   ├── get_sha()
+   ├── test_save_sha()
+   ├── save_sha()
+   ├── test_load_shas()
+   ├── load_shas()
+   ├── test_save_all_shas()
+   └── save_all_shas()
+
+3. file_ops.py
    ├── test_ensure_dir()
    ├── ensure_dir()
    ├── test_write_file()
    ├── write_file()
    ├── test_read_file()
-   ├── read_file()
-   ├── test_get_source_filename()
-   └── get_source_filename()
+   └── read_file()
 ```
 
 ### 第二阶段：外部接口
@@ -180,23 +193,28 @@ git commit -m "feat: complete phase 1 - basic modules (config, file_ops)"
 scripts/
 ├── __init__.py
 ├── config.py
-├── file_ops.py
 ├── github_api.py
 ├── translator.py
 ├── main.py
+├── sha_tracker.py
+├── file_ops.py
+├── prompts/
+│   └── translate_system.txt
 └── tests/
     ├── __init__.py
     ├── test_config.py
-    ├── test_file_ops.py
     ├── test_github_api.py
     ├── test_translator.py
-    └── test_main.py
+    ├── test_main.py
+    ├── test_sha_tracker.py
+    └── test_file_ops.py
 
 .github/
 └── workflows/
     ├── check-updates.yml
     └── translate-docs.yml
 
+check_updates.json
 translation-config.json
 requirements.txt
 pytest.ini
@@ -209,3 +227,4 @@ pytest.ini
 - 示例 Markdown 文件（含代码块、表格）
 - Mock GitHub API 响应
 - Mock LLM API 响应
+- 示例 SHA 追踪文件（ini 格式）

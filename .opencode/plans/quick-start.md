@@ -16,8 +16,6 @@ touch requirements.txt pytest.ini translation-config.json
 **requirements.txt**
 ```
 requests>=2.28.0
-openai>=1.0.0
-anthropic>=0.18.0
 pytest>=7.0.0
 pytest-cov>=4.0.0
 ```
@@ -30,6 +28,40 @@ python_files = test_*.py
 python_classes = Test*
 python_functions = test_*
 addopts = -v --tb=short
+```
+
+**check_updates.json**
+```json
+{
+  "config_paths": [
+    "translation-config.json"
+  ]
+}
+```
+
+**translation-config.json**
+```json
+{
+  "source_repo": "github/spec-kit",
+  "source_branch": "main",
+  "llm": {
+    "provider": "qingcloud",
+    "model": "glm-5"
+  },
+  "groups": [
+    {
+      "name": "core",
+      "target_dir": "translated/zh/core",
+      "include_source": true,
+      "files": [
+        {
+          "source": "README.md",
+          "target": "README.md"
+        }
+      ]
+    }
+  ]
+}
 ```
 
 ### 第三步：安装依赖
@@ -67,24 +99,26 @@ pytest scripts/tests/test_config.py::TestLoadConfig::test_load_valid_config -v
 |------|------|------|----------|
 | 1 | config.py | load_config | test_config.py |
 | 2 | config.py | save_config | test_config.py |
-| 3 | config.py | update_file_sha | test_config.py |
-| 4 | config.py | get_files_to_translate | test_config.py |
-| 5 | file_ops.py | ensure_dir | test_file_ops.py |
-| 6 | file_ops.py | write_file | test_file_ops.py |
-| 7 | file_ops.py | read_file | test_file_ops.py |
-| 8 | file_ops.py | get_source_filename | test_file_ops.py |
-| 9 | github_api.py | get_file_sha | test_github_api.py |
-| 10 | github_api.py | download_file | test_github_api.py |
-| 11 | github_api.py | get_rate_limit | test_github_api.py |
-| 12 | translator.py | split_markdown_sections | test_translator.py |
-| 13 | translator.py | merge_sections | test_translator.py |
-| 14 | translator.py | get_llm_client | test_translator.py |
-| 15 | translator.py | translate_text | test_translator.py |
-| 16 | translator.py | translate_markdown | test_translator.py |
-| 17 | main.py | check_updates | test_main.py |
-| 18 | main.py | translate_files | test_main.py |
-| 19 | main.py | run_check_workflow | test_main.py |
-| 20 | main.py | run_translate_workflow | test_main.py |
+| 3 | config.py | get_files_to_translate | test_config.py |
+| 4 | sha_tracker.py | get_sha | test_sha_tracker.py |
+| 5 | sha_tracker.py | save_sha | test_sha_tracker.py |
+| 6 | sha_tracker.py | load_shas | test_sha_tracker.py |
+| 7 | sha_tracker.py | save_all_shas | test_sha_tracker.py |
+| 8 | file_ops.py | ensure_dir | test_file_ops.py |
+| 9 | file_ops.py | write_file | test_file_ops.py |
+| 10 | file_ops.py | read_file | test_file_ops.py |
+| 11 | github_api.py | get_file_sha | test_github_api.py |
+| 12 | github_api.py | download_file | test_github_api.py |
+| 13 | github_api.py | get_rate_limit | test_github_api.py |
+| 14 | translator.py | split_markdown_sections | test_translator.py |
+| 15 | translator.py | merge_sections | test_translator.py |
+| 16 | translator.py | get_llm_client | test_translator.py |
+| 17 | translator.py | translate_text | test_translator.py |
+| 18 | translator.py | translate_markdown | test_translator.py |
+| 19 | main.py | check_updates | test_main.py |
+| 20 | main.py | translate_files | test_main.py |
+| 21 | main.py | run_check_workflow | test_main.py |
+| 22 | main.py | run_translate_workflow | test_main.py |
 
 ### 第五步：创建 GitHub Actions
 

@@ -49,15 +49,15 @@
 
 ### 3. 多 LLM 提供商支持
 
-| Provider | 说明 | 需要的 Secret |
-|----------|------|---------------|
-| `qingcloud` | 青云 AI（默认） | `QINGCLOUD_API_KEY` |
-| `openai` | OpenAI | `OPENAI_API_KEY` |
-| `anthropic` | Anthropic Claude | `ANTHROPIC_API_KEY` |
-| `deepseek` | DeepSeek | `DEEPSEEK_API_KEY` |
-| `zhipu` | 智谱 | `ZHIPU_API_KEY` |
-| `openrouter` | OpenRouter | `OPENROUTER_API_KEY` |
-| `ollama` | 本地 Ollama | 无需 Secret |
+| Provider | 说明 | 需要的 Secret | 状态 |
+|----------|------|---------------|------|
+| `qingcloud` | 青云 AI（默认） | `QINGCLOUD_API_KEY` | ✅ 已实现 |
+| `openai` | OpenAI | `OPENAI_API_KEY` | ✅ 已实现 |
+| `anthropic` | Anthropic Claude | `ANTHROPIC_API_KEY` | ✅ 已实现 |
+| `deepseek` | DeepSeek | `DEEPSEEK_API_KEY` | ❌ 未实现 |
+| `zhipu` | 智谱 | `ZHIPU_API_KEY` | ❌ 未实现 |
+| `openrouter` | OpenRouter | `OPENROUTER_API_KEY` | ❌ 未实现 |
+| `ollama` | 本地 Ollama | 无需 Secret | ❌ 未实现 |
 
 ### 4. 文件级别增量更新
 
@@ -75,8 +75,16 @@
     ├── check-updates.yml      # 检测更新工作流
     └── translate-docs.yml     # 翻译工作流
 scripts/
-└── translate.py               # 翻译脚本
-translation-config.json        # 全局配置文件
+├── main.py                    # 主流程入口
+├── config.py                  # 配置管理
+├── github_api.py              # GitHub API 集成
+├── translator.py              # 翻译模块
+├── sha_tracker.py             # SHA 状态追踪（INI 格式）
+└── file_ops.py                # 文件操作
+scripts/prompts/
+└── translate_system.txt       # 翻译系统提示词
+check_updates.json             # 多配置文件路径列表
+translation-config.json        # 全局配置文件（单个配置示例）
 ```
 
 ### 配置文件格式 (`translation-config.json`)
@@ -98,13 +106,11 @@ translation-config.json        # 全局配置文件
       "files": [
         {
           "source": "README.md",
-          "target": "README.md",
-          "last_sha": ""
+          "target": "README.md"
         },
         {
           "source": "spec-driven.md",
-          "target": "spec-driven.md",
-          "last_sha": ""
+          "target": "spec-driven.md"
         }
       ]
     },
@@ -115,11 +121,23 @@ translation-config.json        # 全局配置文件
       "files": [
         {
           "source": "docs/upgrade.md",
-          "target": "upgrade.md",
-          "last_sha": ""
+          "target": "upgrade.md"
         }
       ]
     }
+  ]
+}
+```
+
+### 多配置文件管理 (`check_updates.json`)
+
+支持同时管理多个翻译项目配置：
+
+```json
+{
+  "config_paths": [
+    "translation-config.json",
+    "configs/another-config.json"
   ]
 }
 ```
@@ -130,31 +148,36 @@ translation-config.json        # 全局配置文件
 |------|------|------|
 | `source_repo` | string | 源仓库地址（owner/repo 格式） |
 | `source_branch` | string | 源仓库分支 |
-| `llm.provider` | string | LLM 提供商名称 |
+| `llm.provider` | string | LLM 提供商名称（支持：qingcloud, openai, anthropic） |
 | `llm.model` | string | 模型名称 |
 | `llm.base_url` | string? | 可选，自定义 API 地址（用于代理/私有部署） |
 | `groups` | array | 分组列表 |
 | `groups[].name` | string | 分组名称 |
 | `groups[].target_dir` | string | 该组翻译输出目录 |
-| `groups[].include_source` | boolean | 是否包含原文对照文件（`.en.md` 后缀） |
+| `groups[].include_source` | boolean | 是否包含原文对照文件（源文件原名） |
 | `groups[].files` | array | 文件列表 |
 | `groups[].files[].source` | string | 源文件路径（相对源仓库根目录） |
 | `groups[].files[].target` | string | 目标文件名 |
-| `groups[].files[].last_sha` | string | 上次翻译时的 SHA（自动维护） |
 
 ### 输出目录结构示例
 
 ```
-translated/zh/
-├── core/
-│   ├── README.md           # 翻译版
-│   ├── README.en.md        # 原文对照
-│   ├── spec-driven.md
-│   └── spec-driven.en.md
-└── docs/
-    ├── upgrade.md
-    └── upgrade.en.md
+{repo-name}-{branch}/
+├── sha_tracker.ini            # SHA 追踪文件（INI 格式）
+└── translated/zh/
+    ├── core/
+    │   ├── README.md           # 翻译版
+    │   ├── README.md           # 原文对照（源文件同名）
+    │   ├── spec-driven.md
+    │   └── spec-driven.md      # 原文对照
+    └── docs/
+        ├── upgrade.md
+        └── upgrade.md          # 原文对照
 ```
+
+**注意**：
+- SHA 状态独立存储在 `sha_tracker.ini` 文件中，不混入配置文件
+- 原文对照文件使用源文件同名，而不是 `.en.md` 后缀
 
 ## Secrets 配置
 
@@ -219,10 +242,11 @@ OPENROUTER_API_KEY=your_api_key_here
 
 ## 非功能需求
 
-1. **性能**：只翻译变更文件，减少 API 调用
+1. **性能**：只翻译变更文件，减少 API 调用；SHA 状态独立存储，避免配置文件膨胀
 2. **可靠性**：支持重试机制，处理 API 限流
 3. **可维护性**：配置驱动，无需修改代码即可调整翻译目标
 4. **兼容性**：保留 Markdown 格式，不翻译代码块
+5. **扩展性**：支持多配置文件管理，可同时翻译多个项目
 
 ## 实现清单
 
@@ -230,5 +254,12 @@ OPENROUTER_API_KEY=your_api_key_here
 |------|------|
 | `.github/workflows/check-updates.yml` | 检测更新工作流 |
 | `.github/workflows/translate-docs.yml` | 翻译工作流 |
-| `scripts/translate.py` | 翻译脚本（多 LLM 支持） |
-| `translation-config.json` | 全局配置文件 |
+| `scripts/main.py` | 主流程入口和工作流函数 |
+| `scripts/config.py` | 配置文件加载和解析 |
+| `scripts/github_api.py` | GitHub API 集成 |
+| `scripts/translator.py` | LLM 翻译客户端 |
+| `scripts/sha_tracker.py` | SHA 状态追踪（INI 格式） |
+| `scripts/file_ops.py` | 文件读写操作 |
+| `scripts/prompts/translate_system.txt` | 翻译系统提示词 |
+| `check_updates.json` | 多配置文件路径列表 |
+| `translation-config.json` | 单个配置文件示例 |

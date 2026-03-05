@@ -18,7 +18,6 @@ class LLMConfig:
 class FileConfig:
     source: str
     target: str
-    last_sha: str = ""
 
 @dataclass
 class GroupConfig:
@@ -62,23 +61,6 @@ def save_config(config: Config, path: str) -> None:
     """
     pass
 
-def update_file_sha(config: Config, group_idx: int, file_idx: int, sha: str) -> Config:
-    """更新文件的 last_sha
-    
-    Args:
-        config: Config 对象
-        group_idx: 分组索引
-        file_idx: 文件索引
-        sha: 新的 commit SHA
-        
-    Returns:
-        更新后的 Config 对象（新对象，不修改原对象）
-        
-    Raises:
-        IndexError: 索引越界
-    """
-    pass
-
 def get_files_to_translate(config: Config) -> list[tuple[int, int, FileConfig]]:
     """获取所有文件的扁平列表
     
@@ -91,7 +73,64 @@ def get_files_to_translate(config: Config) -> list[tuple[int, int, FileConfig]]:
     pass
 ```
 
-### 1.2 file_ops.py
+### 1.2 sha_tracker.py
+
+```python
+def get_sha_path(config: Config) -> str:
+    """获取 SHA 追踪文件路径
+    
+    Args:
+        config: Config 对象
+        
+    Returns:
+        SHA 追踪文件路径
+    """
+    pass
+
+def load_shas(config: Config) -> dict[str, str]:
+    """加载所有 SHA 状态
+    
+    Args:
+        config: Config 对象
+        
+    Returns:
+        {source_path: sha} 字典
+    """
+    pass
+
+def get_sha(config: Config, source: str) -> str:
+    """获取指定文件的 SHA
+    
+    Args:
+        config: Config 对象
+        source: 源文件路径
+        
+    Returns:
+        SHA 值，不存在则返回空字符串
+    """
+    pass
+
+def save_sha(config: Config, source: str, sha: str) -> None:
+    """保存单个文件的 SHA
+    
+    Args:
+        config: Config 对象
+        source: 源文件路径
+        sha: SHA 值
+    """
+    pass
+
+def save_all_shas(config: Config, shas: dict[str, str]) -> None:
+    """批量保存 SHA 状态
+    
+    Args:
+        config: Config 对象
+        shas: {source_path: sha} 字典
+    """
+    pass
+```
+
+### 1.3 file_ops.py
 
 ```python
 def ensure_dir(path: str) -> None:
@@ -127,26 +166,9 @@ def read_file(path: str) -> str:
         FileNotFoundError: 文件不存在
     """
     pass
-
-def get_source_filename(target_filename: str) -> str:
-    """获取原文对照文件名
-    
-    Args:
-        target_filename: 目标文件名，如 "README.md"
-        
-    Returns:
-        原文文件名，如 "README.en.md"
-        
-    Example:
-        >>> get_source_filename("README.md")
-        'README.en.md'
-        >>> get_source_filename("docs/guide.md")
-        'docs/guide.en.md'
-    """
-    pass
 ```
 
-### 1.3 github_api.py
+### 1.4 github_api.py
 
 ```python
 @dataclass
@@ -155,7 +177,7 @@ class GitHubFile:
     content: str
 
 def get_file_sha(repo: str, branch: str, path: str, token: str) -> str:
-    """获取文件最新 commit SHA
+    """获取文件最新 blob SHA
     
     Args:
         repo: 仓库名，格式 "owner/repo"
@@ -164,7 +186,7 @@ def get_file_sha(repo: str, branch: str, path: str, token: str) -> str:
         token: GitHub token
         
     Returns:
-        commit SHA
+        blob SHA
         
     Raises:
         FileNotFoundError: 文件不存在
@@ -201,14 +223,14 @@ def get_rate_limit(token: str) -> dict:
     pass
 ```
 
-### 1.4 translator.py
+### 1.5 translator.py
 
 ```python
 from typing import Protocol
 
 class LLMClient(Protocol):
     """LLM 客户端协议"""
-    def translate(self, text: str, target_lang: str) -> str:
+    def translate(self, text: str) -> str:
         ...
 
 @dataclass
@@ -217,11 +239,46 @@ class MarkdownSection:
     content: str
     language: Optional[str] = None  # 仅 code 类型
 
+def load_system_prompt(filename: str = "translate_system.txt") -> str:
+    """加载系统提示词文件
+    
+    Args:
+        filename: 提示词文件名
+        
+    Returns:
+        提示词内容
+    """
+    pass
+
+class QingCloudClient:
+    """青云 AI 客户端 (OpenAI 兼容格式)"""
+    def __init__(self, model: str, api_key: str, base_url: Optional[str] = None):
+        pass
+    
+    def translate(self, text: str) -> str:
+        pass
+
+class OpenAIClient:
+    """OpenAI 客户端"""
+    def __init__(self, model: str, api_key: str, base_url: Optional[str] = None):
+        pass
+    
+    def translate(self, text: str) -> str:
+        pass
+
+class AnthropicClient:
+    """Anthropic Claude 客户端"""
+    def __init__(self, model: str, api_key: str, base_url: Optional[str] = None):
+        pass
+    
+    def translate(self, text: str) -> str:
+        pass
+
 def get_llm_client(provider: str, model: str, base_url: Optional[str], api_key: str) -> LLMClient:
     """获取 LLM 客户端
     
     Args:
-        provider: 提供商名称
+        provider: 提供商名称（qingcloud, openai, anthropic）
         model: 模型名称
         base_url: 自定义 API 地址
         api_key: API 密钥
@@ -234,13 +291,12 @@ def get_llm_client(provider: str, model: str, base_url: Optional[str], api_key: 
     """
     pass
 
-def translate_text(client: LLMClient, text: str, target_lang: str = "zh") -> str:
+def translate_text(client: LLMClient, text: str) -> str:
     """翻译文本
     
     Args:
         client: LLM 客户端
         text: 待翻译文本
-        target_lang: 目标语言
         
     Returns:
         翻译后的文本
@@ -278,13 +334,12 @@ def merge_sections(sections: list[MarkdownSection]) -> str:
     """
     pass
 
-def translate_markdown(client: LLMClient, content: str, target_lang: str = "zh") -> str:
+def translate_markdown(client: LLMClient, content: str) -> str:
     """翻译 Markdown（保留代码块不翻译）
     
     Args:
         client: LLM 客户端
         content: Markdown 内容
-        target_lang: 目标语言
         
     Returns:
         翻译后的 Markdown
@@ -292,7 +347,7 @@ def translate_markdown(client: LLMClient, content: str, target_lang: str = "zh")
     pass
 ```
 
-### 1.5 main.py
+### 1.6 main.py
 
 ```python
 @dataclass
@@ -300,7 +355,6 @@ class FileUpdate:
     group_idx: int
     file_idx: int
     file_config: FileConfig
-    new_sha: str
 
 def check_updates(config: Config, github_token: str) -> list[FileUpdate]:
     """检测文件更新
@@ -319,7 +373,7 @@ def translate_files(
     updates: list[FileUpdate],
     llm_client: LLMClient,
     github_token: str
-) -> dict[str, bool]:
+) -> tuple[dict[str, bool], dict[str, str]]:
     """翻译文件
     
     Args:
@@ -329,7 +383,7 @@ def translate_files(
         github_token: GitHub token
         
     Returns:
-        {"文件路径": 是否成功}
+        ({"文件路径": 是否成功}, {"文件路径": SHA})
     """
     pass
 
@@ -356,7 +410,7 @@ def run_translate_workflow() -> None:
 import pytest
 import json
 import tempfile
-from scripts.config import load_config, save_config, update_file_sha, get_files_to_translate, Config
+from scripts.config import load_config, save_config, get_files_to_translate, Config, LLMConfig, GroupConfig, FileConfig
 
 class TestLoadConfig:
     def test_load_valid_config(self, tmp_path):
@@ -416,37 +470,6 @@ class TestSaveConfig:
         data = json.loads(config_file.read_text())
         assert data["source_repo"] == "owner/repo"
 
-class TestUpdateFileSha:
-    def test_update_file_sha(self):
-        """测试更新 SHA"""
-        config = Config(
-            source_repo="owner/repo",
-            source_branch="main",
-            llm=LLMConfig(provider="qingcloud", model="glm-5"),
-            groups=[GroupConfig(
-                name="test",
-                target_dir="output",
-                include_source=True,
-                files=[FileConfig(source="README.md", target="README.md", last_sha="old")]
-            )]
-        )
-        
-        new_config = update_file_sha(config, 0, 0, "new_sha")
-        assert new_config.groups[0].files[0].last_sha == "new_sha"
-        assert config.groups[0].files[0].last_sha == "old"  # 原对象不变
-
-    def test_update_invalid_index(self):
-        """测试索引越界"""
-        config = Config(
-            source_repo="owner/repo",
-            source_branch="main",
-            llm=LLMConfig(provider="qingcloud", model="glm-5"),
-            groups=[]
-        )
-        
-        with pytest.raises(IndexError):
-            update_file_sha(config, 0, 0, "new_sha")
-
 class TestGetFilesToTranslate:
     def test_get_files(self):
         """测试获取文件列表"""
@@ -467,13 +490,52 @@ class TestGetFilesToTranslate:
         assert files[0] == (0, 0, FileConfig(source="a.md", target="a.md"))
 ```
 
-### 2.2 test_file_ops.py
+### 2.2 test_sha_tracker.py
 
 ```python
 import pytest
-from scripts.file_ops import ensure_dir, write_file, read_file, get_source_filename
+import tempfile
+import configparser
+from scripts.sha_tracker import get_sha, save_sha, load_shas, save_all_shas
+from scripts.config import Config, LLMConfig
 
-class TestEnsureDir:
+class TestShaTracker:
+    def test_get_sha_new_file(self):
+        """测试新文件返回空 SHA"""
+        config = Config(
+            source_repo="owner/repo",
+            source_branch="main",
+            llm=LLMConfig(provider="qingcloud", model="glm-5"),
+            groups=[]
+        )
+        sha = get_sha(config, "new_file.md")
+        assert sha == ""
+
+    def test_save_and_get_sha(self, tmp_path):
+        """测试保存和获取 SHA"""
+        config = Config(
+            source_repo="owner/repo",
+            source_branch="main",
+            llm=LLMConfig(provider="qingcloud", model="glm-5"),
+            groups=[]
+        )
+        save_sha(config, "file.md", "abc123")
+        sha = get_sha(config, "file.md")
+        assert sha == "abc123"
+
+    def test_load_shas(self, tmp_path):
+        """测试加载所有 SHA"""
+        config = Config(
+            source_repo="owner/repo",
+            source_branch="main",
+            llm=LLMConfig(provider="qingcloud", model="glm-5"),
+            groups=[]
+        )
+        save_all_shas(config, {"file1.md": "sha1", "file2.md": "sha2"})
+        shas = load_shas(config)
+        assert shas == {"file1.md": "sha1", "file2.md": "sha2"}
+
+class TestFileOps:
     def test_create_dir(self, tmp_path):
         """测试创建新目录"""
         new_dir = tmp_path / "new_dir"
@@ -484,45 +546,20 @@ class TestEnsureDir:
         """测试已存在的目录"""
         existing_dir = tmp_path / "existing"
         existing_dir.mkdir()
-        ensure_dir(str(existing_dir))  # 不应报错
+        ensure_dir(str(existing_dir))
         assert existing_dir.exists()
 
-class TestWriteFile:
     def test_write_file(self, tmp_path):
         """测试写入文件"""
         file_path = tmp_path / "test.txt"
         write_file(str(file_path), "hello")
         assert file_path.read_text() == "hello"
 
-    def test_write_to_nonexistent_dir(self):
-        """测试写入不存在的目录"""
-        with pytest.raises(FileNotFoundError):
-            write_file("/nonexistent/dir/file.txt", "content")
-
-class TestReadFile:
     def test_read_file(self, tmp_path):
         """测试读取文件"""
         file_path = tmp_path / "test.txt"
         file_path.write_text("hello")
         assert read_file(str(file_path)) == "hello"
-
-    def test_read_nonexistent_file(self):
-        """测试读取不存在的文件"""
-        with pytest.raises(FileNotFoundError):
-            read_file("/nonexistent/file.txt")
-
-class TestGetSourceFilename:
-    def test_simple_filename(self):
-        """测试简单文件名"""
-        assert get_source_filename("README.md") == "README.en.md"
-
-    def test_path_with_dir(self):
-        """测试带路径的文件名"""
-        assert get_source_filename("docs/guide.md") == "docs/guide.en.md"
-
-    def test_nested_path(self):
-        """测试嵌套路径"""
-        assert get_source_filename("a/b/c/file.md") == "a/b/c/file.en.md"
 ```
 
 ### 2.3 test_github_api.py
@@ -643,7 +680,7 @@ class TestTranslateMarkdown:
     def test_translate_preserves_code(self):
         """测试代码块不被翻译"""
         mock_client = Mock()
-        mock_client.translate.side_effect = lambda text, lang: "翻译后的文本"
+        mock_client.translate.side_effect = lambda text: "翻译后的文本"
         
         content = "Hello\n```python\ncode\n```\nWorld"
         result = translate_markdown(mock_client, content)
@@ -659,8 +696,6 @@ class TestTranslateMarkdown:
 
 ```
 requests>=2.28.0
-openai>=1.0.0
-anthropic>=0.18.0
 pytest>=7.0.0
 pytest-cov>=4.0.0
 ```
@@ -680,33 +715,91 @@ addopts = -v --tb=short
 
 ```bash
 # 1. 创建目录结构
-mkdir -p scripts/tests .github/workflows
+mkdir -p scripts/tests scripts/prompts .github/workflows
 
 # 2. 创建 __init__.py
 touch scripts/__init__.py scripts/tests/__init__.py
 
 # 3. 创建配置文件
-touch translation-config.json requirements.txt pytest.ini
+touch check_updates.json translation-config.json requirements.txt pytest.ini
 
-# 4. 安装依赖
+# 4. 创建翻译提示词文件
+cat > scripts/prompts/translate_system.txt << 'EOF'
+你是一位专业的科技文献翻译专家，精通中英互译。你的任务是翻译Markdown格式的技术文档。
+
+翻译原则：
+1. 准确性：准确理解原文含义，避免误译和漏译
+2. 专业性：技术术语保持英文原文，不做翻译
+3. 流畅性：译文符合中文表达习惯，避免翻译腔
+4. 简洁性：保持原文风格，不过度润色
+
+特殊处理：
+- 代码块、命令、URL、文件路径等保持原样，不翻译
+- 技术术语（如 API、SDK、CLI、Docker、Kubernetes、Workflow 等）保持英文原文
+- Markdown格式标记保持不变
+
+请直接输出翻译结果，不要添加任何解释或注释。
+EOF
+
+# 5. 安装依赖
 pip install -r requirements.txt
 
-# 5. 运行测试
+# 6. 运行测试
 pytest
 
-# 6. 开始 TDD 开发
+# 7. 开始 TDD 开发
 # 按顺序实现每个模块
 ```
 
 ## 5. 环境变量
 
 ```bash
-# GitHub Token
+# GitHub Token（用于访问仓库）
 GITHUB_TOKEN=ghp_xxx
+# 或使用 PAT_TOKEN（用于 Git 操作）
+PAT_TOKEN=ghp_xxx
 
 # LLM API Key（根据使用的提供商配置）
 QINGCLOUD_API_KEY=xxx
 OPENAI_API_KEY=xxx
-DEEPSEEK_API_KEY=xxx
-# ...
+ANTHROPIC_API_KEY=xxx
+```
+
+## 6. 配置文件
+
+### check_updates.json
+
+```json
+{
+  "config_paths": [
+    "translation-config.json"
+  ]
+}
+```
+
+### translation-config.json
+
+```json
+{
+  "source_repo": "github/spec-kit",
+  "source_branch": "main",
+  "llm": {
+    "provider": "qingcloud",
+    "model": "glm-5",
+    "base_url": null
+  },
+  "groups": [
+    {
+      "name": "core",
+      "target_dir": "translated/zh/core",
+      "include_source": true,
+      "files": [
+        {
+          "source": "README.md",
+          "target": "README.md"
+        }
+      ]
+    }
+  ]
+}
 ```
