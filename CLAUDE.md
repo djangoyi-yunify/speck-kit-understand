@@ -62,7 +62,7 @@ git push origin main
 
 在 `docs/` 目录下提供了文档对比查看器，支持：
 - 选择仓库和文档进行对比
-- Markdown 渲染
+- Markdown 渲染开关（可切换渲染/原始文本模式）
 - 原文与译文并排显示
 
 使用方式：部署 `docs/` 目录到 GitHub Pages，然后在浏览器中打开 `index.html`。

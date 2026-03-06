@@ -37,6 +37,7 @@ const basePath = 'translated';
 // DOM 元素
 const repoSelect = document.getElementById('repo-select');
 const docSelect = document.getElementById('doc-select');
+const renderToggle = document.getElementById('render-toggle');
 const sourceContent = document.getElementById('source-content');
 const targetContent = document.getElementById('target-content');
 const sourceName = document.getElementById('source-name');
@@ -50,6 +51,7 @@ let currentTargetContent = '';
 function init() {
     repoSelect.addEventListener('change', handleRepoChange);
     docSelect.addEventListener('change', handleDocChange);
+    renderToggle.addEventListener('change', renderContent);
 }
 
 // 处理仓库选择变化
@@ -133,8 +135,28 @@ async function fetchFile(path) {
 
 // 渲染内容
 function renderContent() {
-    sourceContent.innerHTML = marked.parse(currentSourceContent);
-    targetContent.innerHTML = marked.parse(currentTargetContent);
+    const shouldRender = renderToggle.checked;
+
+    if (shouldRender) {
+        // 渲染 Markdown
+        sourceContent.innerHTML = marked.parse(currentSourceContent);
+        targetContent.innerHTML = marked.parse(currentTargetContent);
+        sourceContent.classList.remove('raw-text');
+        targetContent.classList.remove('raw-text');
+    } else {
+        // 显示原始文本（转义 HTML 特殊字符）
+        sourceContent.innerHTML = escapeHtml(currentSourceContent);
+        targetContent.innerHTML = escapeHtml(currentTargetContent);
+        sourceContent.classList.add('raw-text');
+        targetContent.classList.add('raw-text');
+    }
+}
+
+// 转义 HTML 特殊字符
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // 启动应用

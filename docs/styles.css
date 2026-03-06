@@ -69,6 +69,28 @@ select:focus {
     outline-offset: 2px;
 }
 
+/* Markdown 渲染开关 */
+.render-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--header-text);
+    font-size: 0.9rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.render-toggle input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+.render-toggle span {
+    white-space: nowrap;
+}
+
 /* 主内容区 */
 main {
     flex: 1;
@@ -268,4 +290,12 @@ footer a:hover {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* 原始文本模式（未渲染 Markdown） */
+.panel-content.raw-text {
+    font-family: "SF Mono", Monaco, Consolas, "Courier New", monospace;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
