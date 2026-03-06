@@ -1,5 +1,5 @@
 {
-  "source_repo": "djangoyi-yunify/speck-kit-understand",
+  "source_repo": "djangoyi-yunify/tech-research-101",
   "source_branch": "main",
   "llm": {
     "provider": "qingcloud",
@@ -8,8 +8,8 @@
   },
   "groups": [
     {
-      "name": "demo",
-      "target_dir": "demo",
+      "name": "root",
+      "target_dir": "",
       "include_source": true,
       "files": [
         {
