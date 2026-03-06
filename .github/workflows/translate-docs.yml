@@ -48,7 +48,10 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-      
+
+      - name: Pull latest changes
+        run: git pull --rebase origin main
+
       - name: Translate files
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
@@ -69,6 +72,7 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "docs: update translated documentation"
-            git pull --rebase origin main
+            git fetch origin
+            git rebase origin/main
             git push origin main
           fi
