@@ -2,6 +2,9 @@
 
 // 文档映射表
 const documentMap = {
+    'djangoyi-yunify-tech-research-101-main': [
+        { source: 'demo.md', target: 'demo.cn.md', name: 'Demo' }
+    ],
     'github-spec-kit-main': [
         { source: '00-constitution/constitution.md', target: '00-constitution/constitution.cn.md', name: 'Constitution (宪法)' },
         { source: '00-constitution/constitution-template.md', target: '00-constitution/constitution-template.cn.md', name: 'Constitution Template' },
@@ -29,7 +32,7 @@ const documentMap = {
 };
 
 // 基础路径
-const basePath = '..';
+const basePath = 'translated';
 
 // DOM 元素
 const repoSelect = document.getElementById('repo-select');
