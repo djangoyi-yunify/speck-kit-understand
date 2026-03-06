@@ -14,10 +14,6 @@
     --text-muted: #64748b;
     --header-bg: #1e293b;
     --header-text: #ffffff;
-    --add-bg: #dcfce7;
-    --add-text: #166534;
-    --del-bg: #fee2e2;
-    --del-text: #991b1b;
     --code-bg: #f1f5f9;
 }
 
@@ -71,20 +67,6 @@ select:disabled {
 select:focus {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
-}
-
-.toggle-diff {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    font-size: 0.9rem;
-}
-
-.toggle-diff input {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
 }
 
 /* 主内容区 */
@@ -223,22 +205,6 @@ main {
 
 .panel-content th {
     background-color: var(--bg-color);
-}
-
-/* 差异高亮样式 */
-.diff-add {
-    background-color: var(--add-bg);
-    color: var(--add-text);
-    padding: 0.1em 0.2em;
-    border-radius: 2px;
-}
-
-.diff-del {
-    background-color: var(--del-bg);
-    color: var(--del-text);
-    text-decoration: line-through;
-    padding: 0.1em 0.2em;
-    border-radius: 2px;
 }
 
 /* 页脚 */

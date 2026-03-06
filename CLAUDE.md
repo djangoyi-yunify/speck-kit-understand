@@ -25,7 +25,7 @@ tech-research-101/
 ├── requirements.txt            # Python 依赖
 ├── docs/                       # 前端文档查看器
 │   ├── index.html              # 文档对比查看器页面
-│   ├── app.js                  # 前端逻辑（支持 Markdown 渲染、差异对比）
+│   ├── app.js                  # 前端逻辑（支持 Markdown 渲染）
 │   ├── styles.css              # 样式
 │   └── translated/             # 翻译输出目录
 │       ├── djangoyi-yunify-tech-research-101-main/  # demo.json 翻译结果
@@ -63,7 +63,7 @@ git push origin main
 在 `docs/` 目录下提供了文档对比查看器，支持：
 - 选择仓库和文档进行对比
 - Markdown 渲染
-- 差异高亮模式
+- 原文与译文并排显示
 
 使用方式：部署 `docs/` 目录到 GitHub Pages，然后在浏览器中打开 `index.html`。
 

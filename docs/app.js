@@ -37,7 +37,6 @@ const basePath = 'translated';
 // DOM 元素
 const repoSelect = document.getElementById('repo-select');
 const docSelect = document.getElementById('doc-select');
-const diffToggle = document.getElementById('diff-toggle');
 const sourceContent = document.getElementById('source-content');
 const targetContent = document.getElementById('target-content');
 const sourceName = document.getElementById('source-name');
@@ -51,7 +50,6 @@ let currentTargetContent = '';
 function init() {
     repoSelect.addEventListener('change', handleRepoChange);
     docSelect.addEventListener('change', handleDocChange);
-    diffToggle.addEventListener('change', handleDiffToggle);
 }
 
 // 处理仓库选择变化
@@ -135,80 +133,8 @@ async function fetchFile(path) {
 
 // 渲染内容
 function renderContent() {
-    const showDiff = diffToggle.checked;
-
-    if (showDiff) {
-        // 差异对比模式
-        sourceContent.innerHTML = renderDiff(currentSourceContent, currentTargetContent, 'source');
-        targetContent.innerHTML = renderDiff(currentTargetContent, currentSourceContent, 'target');
-    } else {
-        // 正常渲染模式
-        sourceContent.innerHTML = marked.parse(currentSourceContent);
-        targetContent.innerHTML = marked.parse(currentTargetContent);
-    }
-}
-
-// 差异对比渲染
-function renderDiff(text1, text2, mode) {
-    const dmp = new diff_match_patch();
-
-    // 计算差异
-    const diffs = dmp.diff_main(text1, text2);
-    dmp.diff_cleanupSemantic(diffs);
-
-    let html = '';
-    let inCodeBlock = false;
-
-    diffs.forEach(([type, value]) => {
-        // 处理代码块
-        if (value.startsWith('```')) {
-            inCodeBlock = !inCodeBlock;
-            html += escapeHtml(value);
-            return;
-        }
-
-        if (inCodeBlock) {
-            html += escapeHtml(value);
-            return;
-        }
-
-        // 处理差异
-        const escaped = escapeHtml(value);
-        if (type === 0) {
-            // 相等
-            html += escaped;
-        } else if (type === 1) {
-            // 添加（原文有，译文没有 -> 在目标中显示为新增）
-            if (mode === 'target') {
-                html += `<span class="diff-add">${escaped}</span>`;
-            } else {
-                html += escaped;
-            }
-        } else if (type === -1) {
-            // 删除（译文没有，原文有 -> 在目标中显示为删除）
-            if (mode === 'target') {
-                html += `<span class="diff-del">${escaped}</span>`;
-            } else {
-                html += escaped;
-            }
-        }
-    });
-
-    return marked.parse(html);
-}
-
-// HTML 转义
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// 处理差异高亮切换
-function handleDiffToggle() {
-    if (currentSourceContent && currentTargetContent) {
-        renderContent();
-    }
+    sourceContent.innerHTML = marked.parse(currentSourceContent);
+    targetContent.innerHTML = marked.parse(currentTargetContent);
 }
 
 // 启动应用
