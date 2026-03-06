@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档对比查看器 - tech-research-101</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>📄 文档对比查看器</h1>
+        <div class="header-controls">
+            <select id="repo-select">
+                <option value="">选择仓库...</option>
+                <option value="github-spec-kit-main">GitHub Spec Kit</option>
+                <option value="anthropics-skills-main">Anthropic Skills</option>
+            </select>
+            <select id="doc-select" disabled>
+                <option value="">选择文档...</option>
+            </select>
+            <label class="toggle-diff">
+                <input type="checkbox" id="diff-toggle">
+                <span>显示差异高亮</span>
+            </label>
+        </div>
+    </header>
+
+    <main>
+        <div class="comparison-container">
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="lang-badge">原文 (English)</span>
+                    <span id="source-name">-</span>
+                </div>
+                <div class="panel-content" id="source-content">
+                    <p class="placeholder">请选择要对比的文档</p>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="lang-badge translated">译文 (中文)</span>
+                    <span id="target-name">-</span>
+                </div>
+                <div class="panel-content" id="target-content">
+                    <p class="placeholder">请选择要对比的文档</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>基于 <a href="https://github.com/anthropics/claude-code" target="_blank">Claude Code</a> 构建 | 技术文档翻译系统</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/diff-match-patch@1.0.5/diff_match_patch.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
